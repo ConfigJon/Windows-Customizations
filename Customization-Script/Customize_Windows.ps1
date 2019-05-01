@@ -1,7 +1,16 @@
-<#Example Usage
-
-Customize_Windows.ps1 -File C:\Temp\Parameters.txt
-
+<#
+    .DESCRIPTION
+        This script can be used to apply Windows 10 customizations.
+	
+    .PARAMETER File
+        Path to the text file that contains the customizaiton parameters
+	
+    .EXAMPLE
+        Customize_Windows.ps1 -File C:\Temp\Parameters.txt
+	
+    .NOTES
+        Created by: Jon Anderson
+        Reference: https://github.com/ConfigJon/Windows-Customizations/tree/master/Customization-Script
 #>
 
 #Create Parameters
@@ -42,7 +51,8 @@ Function New-RegistryValue
     }
 }
 
-#Import-RegistryHive and Remove-RegistryHive sourced from http://blog.redit.name/posts/2015/powershell-loading-registry-hive-from-file.html
+#Import-RegistryHive and Remove-RegistryHive sourced from
+#http://blog.redit.name/posts/2015/powershell-loading-registry-hive-from-file.html
 Function Import-RegistryHive
 {
     [CmdletBinding()]
@@ -56,7 +66,7 @@ Function Import-RegistryHive
 
     #Check whether the drive name is available
     $TestDrive = Get-PSDrive -Name $Name -EA SilentlyContinue
-    if ($TestDrive -ne $null)
+    if ($NULL -ne $TestDrive)
     {
         throw [Management.Automation.SessionStateException] "A drive with the name '$Name' already exists."
     }
