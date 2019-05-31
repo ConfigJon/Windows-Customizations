@@ -3,10 +3,10 @@
         This script can be used to apply Windows 10 customizations.
 	
     .PARAMETER File
-        Path to the text file that contains the customizaiton parameters
+        Path to the ini file that contains the customizaiton parameters
 	
     .EXAMPLE
-        Customize_Windows.ps1 -File C:\Temp\Parameters.txt
+        Customize_Windows.ps1 -File C:\Temp\parameters.ini
 	
     .NOTES
         Created by: Jon Anderson
@@ -14,26 +14,28 @@
 #>
 
 #Create Parameters
-Param(
-    [String][Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()]$File
+param(
+    [String][parameter(Mandatory=$true)][ValidateNotNullOrEmpty()]$File
 )
 
 #Create Functions===========================================================================================================
 Function New-RegistryValue
 {
     [CmdletBinding()]
-    Param(
-        [String][Parameter(Mandatory=$true)]$Customization,    
-        [String][Parameter(Mandatory=$true)]$RegKey,
-        [String][Parameter(Mandatory=$true)]$Name,
-        [String][Parameter(Mandatory=$true)]$PropertyType,
-        [String][Parameter(Mandatory=$true)]$Value
+    param(
+        [String][parameter(Mandatory=$true)]$Customization,    
+        [String][parameter(Mandatory=$true)]$RegKey,
+        [String][parameter(Mandatory=$true)]$Name,
+        [String][parameter(Mandatory=$true)]$PropertyType,
+        [String][parameter(Mandatory=$true)]$Value
     )
-    If (Test-Path Variable:$Customization){
+    if (Test-Path Variable:$Customization)
+    {
         Write-Host "Running Customization - $Customization"
         
         #Create the registry key if it does not exist
-        If (!(Test-Path $RegKey)){
+        if (!(Test-Path $RegKey))
+        {
             New-Item -Path $RegKey -Force | Out-Null
         }
 
@@ -42,11 +44,14 @@ Function New-RegistryValue
 
         #Check if the registry value was successfully created
         $KeyCheck = Get-ItemProperty $RegKey
-        If ($KeyCheck.$Name -eq $Value){
+        if ($KeyCheck.$Name -eq $Value)
+        {
             Write-Host "Successfully set $RegKey\$Name to $Value"
             Write-Host "`n"
-        }Else{
-            Throw "Failed to set $RegKey\$Name to $Value"
+        }
+        else
+        {
+            throw "Failed to set $RegKey\$Name to $Value"
         }
     }
 }
@@ -56,12 +61,12 @@ Function New-RegistryValue
 Function Import-RegistryHive
 {
     [CmdletBinding()]
-    Param(
-        [String][Parameter(Mandatory=$true)]$File,
+    param(
+        [String][parameter(Mandatory=$true)]$File,
         #Check the registry key name is not an invalid format
-        [String][Parameter(Mandatory=$true)][ValidatePattern('^(HKLM\\|HKCU\\)[a-zA-Z0-9- _\\]+$')]$Key,
+        [String][parameter(Mandatory=$true)][ValidatePattern('^(HKLM\\|HKCU\\)[a-zA-Z0-9- _\\]+$')]$Key,
         #Check the PSDrive name does not include invalid characters
-        [String][Parameter(Mandatory=$true)][ValidatePattern('^[^;~/\\\.\:]+$')]$Name
+        [String][parameter(Mandatory=$true)][ValidatePattern('^[^;~/\\\.\:]+$')]$Name
     )
 
     #Check whether the drive name is available
@@ -80,7 +85,7 @@ Function Import-RegistryHive
 
     try
     {
-        #Validate patten on $Name in the Params and the drive name check at the start make it very unlikely New-PSDrive will fail
+        #Validate patten on $Name in the params and the drive name check at the start make it very unlikely New-PSDrive will fail
         New-PSDrive -Name $Name -PSProvider Registry -Root $Key -Scope Global -EA Stop | Out-Null
     }
     catch
@@ -92,8 +97,8 @@ Function Import-RegistryHive
 Function Remove-RegistryHive
 {
     [CmdletBinding()]
-    Param(
-        [String][Parameter(Mandatory=$true)][ValidatePattern('^[^;~/\\\.\:]+$')]$Name
+    param(
+        [String][parameter(Mandatory=$true)][ValidatePattern('^[^;~/\\\.\:]+$')]$Name
     )
 
     #Set -ErrorAction Stop as we never want to proceed if the drive doesnt exist
@@ -107,100 +112,115 @@ Function Remove-RegistryHive
     $Process = Start-Process -FilePath "$env:WINDIR\system32\reg.exe" -ArgumentList "unload $Key" -WindowStyle Hidden -PassThru -Wait
     if ($Process.ExitCode)
     {
-        #If "reg unload" fails due to the resource being busy, the drive gets added back to keep the original state
+        #if "reg unload" fails due to the resource being busy, the drive gets added back to keep the original state
         New-PSDrive -Name $Name -PSProvider Registry -Root $Key -Scope Global -EA Stop | Out-Null
         throw [Management.Automation.PSInvalidOperationException] "The registry key '$Key' could not be unloaded, the key may still be in use."
     }
 }
 #===========================================================================================================================
 
-#Check that the specified file exists
-If (!(Test-Path $File)){
-    Throw "Could not find $File Please enter a vaild path to the parameters file."
+#Check that the specified parameters file exists
+if (!(Test-Path $File))
+{
+    throw "Could not find $File Please enter a vaild path to the parameters file."
 }
 
-#Check that the specified file is an ini file
+#Check that the specified parameters file is an ini file
 $Extension = $File.Split('.')
-If ($Extension[1] -ne "ini"){
-    Throw "$File is not an ini file. Please specify a file with a .ini extension."
+if ($Extension[1] -ne "ini")
+{
+    throw "$File is not an ini file. Please specify a file with a .ini extension."
 }
 
 #Read data from the parameters file
-$Parameters = Get-Content $File
+$parameters = Get-Content $File
 
 #Create variables for each line in the parameters file
-Foreach ($Parameter in $Parameters){
-    if ($Parameter.StartsWith("#")){}
-    else{
-        $Variable = $Parameter.Split('=')
+foreach ($parameter in $parameters){
+    if ($parameter.StartsWith("#"))
+    {
+    }
+    else
+    {
+        $Variable = $parameter.Split('=')
         New-Variable -Name $Variable[0] -Value $Variable[1] -Force
     }
 }
 
 #Import Default Application Associations
-If ($DefaultApps)
+if ($DefaultApps)
 {
-    If ($DefaultApps -like "*.xml"){
+    if ($DefaultApps -like "*.xml")
+    {
         Write-Host "Running Customization - Import Default Application Associations"
         Dism.exe /Online /Import-DefaultAppAssociations:"$PSScriptRoot\$DefaultApps" | Out-Null
         Write-Host "Done"
         Write-Host "`n"
-    }    
+    }
+    else
+    {
+        throw "$DefaultApps is not an xml file. Please specify a file with a .xml extension."
+    }
 }
 
 #Import Default Start Menu and Taskbar Layout
-If ($StartLayout)
+if ($StartLayout)
 {
-    If ($StartLayout -like "*.xml"){
+    if ($StartLayout -like "*.xml")
+    {
         Write-Host "Running Customizations - Import Default Start Menu and Taskbar layout"
         Import-StartLayout -LayoutPath "$PSScriptRoot\$StartLayout" -MountPath "$Env:SystemDrive\"
         Write-Host "Done"
         Write-Host "`n"
     }
+    else
+    {
+        throw "$StartLayout is not an xml file. Please specify a file with a .xml extension."
+    }
 }
 
 #Run HKLM Registry Customizations
-If ($Cortana)
+if ($Cortana)
 {
     New-RegistryValue -Customization Cortana -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "AllowCortana" -PropertyType DWord -Value $Cortana
 }
-If ($OOBECortana)
+if ($OOBECortana)
 {
     New-RegistryValue -Customization OOBECortana -RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OOBE" -Name "DisableVoice" -PropertyType DWord -Value $OOBECortana
 }
-If ($WiFiSense)
+if ($WifiSense)
 {
-    New-RegistryValue -Customization WiFiSense -RegKey "HKLM:\SOFTWARE\Microsoft\PolicyManager\default\WiFi\AllowAutoConnectToWiFiSenseHotspots" -Name "Value" -PropertyType DWord -Value $WiFiSense
+    New-RegistryValue -Customization WifiSense -RegKey "HKLM:\SOFTWARE\Microsoft\PolicyManager\default\Wifi\AllowAutoConnectToWifiSenseHotspots" -Name "Value" -PropertyType DWord -Value $WifiSense
 }
-If ($EdgeFirstRun)
+if ($EdgeFirstRun)
 {
     New-RegistryValue -Customization EdgeFirstRun -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\MicrosoftEdge\Main" -Name "PreventFirstRunPage" -PropertyType DWord -Value $EdgeFirstRun
 }
-If ($FirstLogonAnimation)
+if ($FirstLogonAnimation)
 {
     New-RegistryValue -Customization FirstLogonAnimation -RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableFirstLogonAnimation" -PropertyType DWord -Value $FirstLogonAnimation
 }
-If ($ConsumerFeatures)
+if ($ConsumerFeatures)
 {
     New-RegistryValue -Customization ConsumerFeatures -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Name "DisableWindowsConsumerFeatures" -PropertyType DWord -Value $ConsumerFeatures
 }
-If ($WindowsTips)
+if ($WindowsTips)
 {
     New-RegistryValue -Customization WindowsTips -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Name "DisableSoftLanding" -PropertyType DWord -Value $WindowsTips
 }
-If ($EdgeDesktopShortcut)
+if ($EdgeDesktopShortcut)
 {
     New-RegistryValue -Customization EdgeDesktopShortcut -RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" -Name "DisableEdgeDesktopShortcutCreation" -PropertyType DWord -Value $EdgeDesktopShortcut
 }
-If ($FileExplorerView)
+if ($FileExplorerView)
 {
     New-RegistryValue -Customization FileExplorerView -RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "LaunchTo" -PropertyType DWord -Value $FileExplorerView
 }
-If ($RunAsUserStart)
+if ($RunAsUserStart)
 {
     New-RegistryValue -Customization RunAsUserStart -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" -Name "ShowRunasDifferentuserinStart" -PropertyType DWord -Value $RunAsUserStart
 }
-If ($FastStartup)
+if ($FastStartup)
 {
     New-RegistryValue -Customization FastStartup -RegKey "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -PropertyType DWord -Value $FastStartup
 }
@@ -210,27 +230,27 @@ $HiveName = "DefaultUserHive"
 Import-RegistryHive -File 'C:\Users\Default\NTUSER.DAT' -Key 'HKLM\DefaultUser' -Name $HiveName
 
 #Run Default User Registry Customizations
-If ($DefenderPrompt)
+if ($DefenderPrompt)
 {
-    New-RegistryValue -Customization DefenderPrompt -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows Defender" -Name "UIFirstRun" -PropertyType DWord -Value $DefenderPrompt
+    New-RegistryValue -Customization DefenderPrompt -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows Defender" -Name "UifirstRun" -PropertyType DWord -Value $DefenderPrompt
 }
-If ($InkWorkspaceIcon)
+if ($InkWorkspaceIcon)
 {
     New-RegistryValue -Customization InkWorkspaceIcon -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\PenWorkspace" -Name "PenWorkspaceButtonDesiredVisibility" -PropertyType DWord -Value $InkWorkspaceIcon
 }
-If ($TouchKeyboardIcon)
+if ($TouchKeyboardIcon)
 {
     New-RegistryValue -Customization TouchKeyboardIcon -RegKey "$($HiveName):\SOFTWARE\Microsoft\TabletTip\1.7" -Name "TipbandDesiredVisibility" -PropertyType DWord -Value $TouchKeyboardIcon
 }
-If ($SerachIcon)
+if ($SerachIcon)
 {
     New-RegistryValue -Customization SerachIcon -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -PropertyType DWord -Value $SerachIcon
 }
-If ($PeopleIcon)
+if ($PeopleIcon)
 {
     New-RegistryValue -Customization PeopleIcon -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\People" -Name "PeopleBand" -PropertyType DWord -Value $PeopleIcon
 }
-If ($TaskViewIcon)
+if ($TaskViewIcon)
 {
     New-RegistryValue -Customization TaskViewIcon -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -PropertyType DWord -Value $TaskViewIcon
 }
@@ -239,22 +259,22 @@ If ($TaskViewIcon)
 #http://blog.redit.name/posts/2015/powershell-loading-registry-hive-from-file.html
 #Attempt Remove-RegistryHive a maximum of 3 times
 $Count = 0
-While($true)
+while($true)
 {
-    Try
+    try
     {
         #When Remove-RegistryHive is successful break will stop the loop
         $Count++
         Remove-RegistryHive -Name $HiveName
         Write-Host 'Remove-RegistryHive succeeded. NTUSER.DAT updated successfully'
-        Break
+        break
     }
-    Catch
+    catch
     {
-        If ($Count -eq 3)
+        if ($Count -eq 3)
         {
             #Rethrow the exception, we gave up
-            Throw
+            throw
         }
 
         Write-Host 'Remove-RegistryHive failed, trying again...'
