@@ -18,7 +18,7 @@ Param(
     [String][Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()]$File
 )
 
-#Create Functions
+#Create Functions===========================================================================================================
 Function New-RegistryValue
 {
     [CmdletBinding()]
@@ -112,6 +112,7 @@ Function Remove-RegistryHive
         throw [Management.Automation.PSInvalidOperationException] "The registry key '$Key' could not be unloaded, the key may still be in use."
     }
 }
+#===========================================================================================================================
 
 #Check that the specified file exists
 If (!(Test-Path $File)){
@@ -137,44 +138,102 @@ Foreach ($Parameter in $Parameters){
 }
 
 #Import Default Application Associations
-If ($DefaultApps -like "*.xml"){
-    Write-Host "Running Customization - Import Default Application Associations"
-    Dism.exe /Online /Import-DefaultAppAssociations:"$PSScriptRoot\$DefaultApps" | Out-Null
-    Write-Host "Done"
-    Write-Host "`n"
+If ($DefaultApps)
+{
+    If ($DefaultApps -like "*.xml"){
+        Write-Host "Running Customization - Import Default Application Associations"
+        Dism.exe /Online /Import-DefaultAppAssociations:"$PSScriptRoot\$DefaultApps" | Out-Null
+        Write-Host "Done"
+        Write-Host "`n"
+    }    
 }
 
 #Import Default Start Menu and Taskbar Layout
-If ($StartLayout -like "*.xml"){
-    Write-Host "Running Customizations - Import Default Start Menu and Taskbar layout"
-    Import-StartLayout -LayoutPath "$PSScriptRoot\$StartLayout" -MountPath "$Env:SystemDrive\"
-    Write-Host "Done"
-    Write-Host "`n"
+If ($StartLayout)
+{
+    If ($StartLayout -like "*.xml"){
+        Write-Host "Running Customizations - Import Default Start Menu and Taskbar layout"
+        Import-StartLayout -LayoutPath "$PSScriptRoot\$StartLayout" -MountPath "$Env:SystemDrive\"
+        Write-Host "Done"
+        Write-Host "`n"
+    }
 }
 
 #Run HKLM Registry Customizations
-New-RegistryValue -Customization Cortana -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "AllowCortana" -PropertyType DWord -Value $Cortana
-New-RegistryValue -Customization OOBECortana -RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OOBE" -Name "DisableVoice" -PropertyType DWord -Value $OOBECortana
-New-RegistryValue -Customization WiFiSense -RegKey "HKLM:\SOFTWARE\Microsoft\PolicyManager\default\WiFi\AllowAutoConnectToWiFiSenseHotspots" -Name "Value" -PropertyType DWord -Value $WiFiSense
-New-RegistryValue -Customization EdgeFirstRun -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\MicrosoftEdge\Main" -Name "PreventFirstRunPage" -PropertyType DWord -Value $EdgeFirstRun
-New-RegistryValue -Customization FirstLogonAnimation -RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableFirstLogonAnimation" -PropertyType DWord -Value $FirstLogonAnimation
-New-RegistryValue -Customization ConsumerFeatures -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Name "DisableWindowsConsumerFeatures" -PropertyType DWord -Value $ConsumerFeatures
-New-RegistryValue -Customization WindowsTips -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Name "DisableSoftLanding" -PropertyType DWord -Value $WindowsTips
-New-RegistryValue -Customization EdgeDesktopShortcut -RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" -Name "DisableEdgeDesktopShortcutCreation" -PropertyType DWord -Value $EdgeDesktopShortcut
-New-RegistryValue -Customization FileExplorerView -RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "LaunchTo" -PropertyType DWord -Value $FileExplorerView
-New-RegistryValue -Customization RunAsUserStart -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" -Name "ShowRunasDifferentuserinStart" -PropertyType DWord -Value $RunAsUserStart
-New-RegistryValue -Customization TaskViewIcon -RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -PropertyType DWord -Value $TaskViewIcon
+If ($Cortana)
+{
+    New-RegistryValue -Customization Cortana -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "AllowCortana" -PropertyType DWord -Value $Cortana
+}
+If ($OOBECortana)
+{
+    New-RegistryValue -Customization OOBECortana -RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OOBE" -Name "DisableVoice" -PropertyType DWord -Value $OOBECortana
+}
+If ($WiFiSense)
+{
+    New-RegistryValue -Customization WiFiSense -RegKey "HKLM:\SOFTWARE\Microsoft\PolicyManager\default\WiFi\AllowAutoConnectToWiFiSenseHotspots" -Name "Value" -PropertyType DWord -Value $WiFiSense
+}
+If ($EdgeFirstRun)
+{
+    New-RegistryValue -Customization EdgeFirstRun -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\MicrosoftEdge\Main" -Name "PreventFirstRunPage" -PropertyType DWord -Value $EdgeFirstRun
+}
+If ($FirstLogonAnimation)
+{
+    New-RegistryValue -Customization FirstLogonAnimation -RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableFirstLogonAnimation" -PropertyType DWord -Value $FirstLogonAnimation
+}
+If ($ConsumerFeatures)
+{
+    New-RegistryValue -Customization ConsumerFeatures -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Name "DisableWindowsConsumerFeatures" -PropertyType DWord -Value $ConsumerFeatures
+}
+If ($WindowsTips)
+{
+    New-RegistryValue -Customization WindowsTips -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Name "DisableSoftLanding" -PropertyType DWord -Value $WindowsTips
+}
+If ($EdgeDesktopShortcut)
+{
+    New-RegistryValue -Customization EdgeDesktopShortcut -RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" -Name "DisableEdgeDesktopShortcutCreation" -PropertyType DWord -Value $EdgeDesktopShortcut
+}
+If ($FileExplorerView)
+{
+    New-RegistryValue -Customization FileExplorerView -RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "LaunchTo" -PropertyType DWord -Value $FileExplorerView
+}
+If ($RunAsUserStart)
+{
+    New-RegistryValue -Customization RunAsUserStart -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" -Name "ShowRunasDifferentuserinStart" -PropertyType DWord -Value $RunAsUserStart
+}
+If ($FastStartup)
+{
+    New-RegistryValue -Customization FastStartup -RegKey "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -PropertyType DWord -Value $FastStartup
+}
 
 #Load the Default User registry hive
 $HiveName = "DefaultUserHive"
 Import-RegistryHive -File 'C:\Users\Default\NTUSER.DAT' -Key 'HKLM\DefaultUser' -Name $HiveName
 
 #Run Default User Registry Customizations
-New-RegistryValue -Customization DefenderPrompt -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows Defender" -Name "UIFirstRun" -PropertyType DWord -Value $DefenderPrompt
-New-RegistryValue -Customization InkWorkspaceIcon -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\PenWorkspace" -Name "PenWorkspaceButtonDesiredVisibility" -PropertyType DWord -Value $InkWorkspaceIcon
-New-RegistryValue -Customization TouchKeyboardIcon -RegKey "$($HiveName):\SOFTWARE\Microsoft\TabletTip\1.7" -Name "TipbandDesiredVisibility" -PropertyType DWord -Value $TouchKeyboardIcon
-New-RegistryValue -Customization SerachIcon -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -PropertyType DWord -Value $SerachIcon
-New-RegistryValue -Customization PeopleIcon -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\People" -Name "PeopleBand" -PropertyType DWord -Value $PeopleIcon
+If ($DefenderPrompt)
+{
+    New-RegistryValue -Customization DefenderPrompt -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows Defender" -Name "UIFirstRun" -PropertyType DWord -Value $DefenderPrompt
+}
+If ($InkWorkspaceIcon)
+{
+    New-RegistryValue -Customization InkWorkspaceIcon -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\PenWorkspace" -Name "PenWorkspaceButtonDesiredVisibility" -PropertyType DWord -Value $InkWorkspaceIcon
+}
+If ($TouchKeyboardIcon)
+{
+    New-RegistryValue -Customization TouchKeyboardIcon -RegKey "$($HiveName):\SOFTWARE\Microsoft\TabletTip\1.7" -Name "TipbandDesiredVisibility" -PropertyType DWord -Value $TouchKeyboardIcon
+}
+If ($SerachIcon)
+{
+    New-RegistryValue -Customization SerachIcon -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -PropertyType DWord -Value $SerachIcon
+}
+If ($PeopleIcon)
+{
+    New-RegistryValue -Customization PeopleIcon -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\People" -Name "PeopleBand" -PropertyType DWord -Value $PeopleIcon
+}
+If ($TaskViewIcon)
+{
+    New-RegistryValue -Customization TaskViewIcon -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -PropertyType DWord -Value $TaskViewIcon
+}
 
 #Unload the Default User registry hive
 #http://blog.redit.name/posts/2015/powershell-loading-registry-hive-from-file.html
