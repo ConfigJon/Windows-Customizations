@@ -76,7 +76,7 @@ $RemoveApps = $apps | ForEach-Object {$AppName = $PSItem; Get-AppxProvisionedPac
 #Run the command and wait 2 minutes
 $count = 0
 while ($count -lt 1){
-    $Output = Start-Timeout -Command {$RemoveApps} -Timeout 120000
+    $Output = Start-Timeout -Command {$RemoveApps} -Timeout 60000
     if($Output.Success){
         $count++
         Write-Host $Output.Data
