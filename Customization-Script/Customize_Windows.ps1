@@ -9,13 +9,29 @@
         Customize_Windows.ps1 -File C:\Temp\parameters.ini
 	
     .NOTES
-        Created by: Jon Anderson
+        Created by: Jon Anderson (@ConfigJon)
+        Updated 6/25/19
         Reference: https://github.com/ConfigJon/Windows-Customizations/tree/master/Customization-Script
 #>
 
 #Create Parameters
 param(
-    [String][parameter(Mandatory=$true)][ValidateNotNullOrEmpty()]$File
+    [ValidateScript({
+        if (!($_ | Test-Path))
+        {
+            throw "The specified file does not exist"
+        }
+        if (!($_ | Test-Path -PathType Leaf))
+        {
+            throw "The Path argument must be a file. Folder paths are not allowed."
+        }
+        if ($_ -notmatch "(\.ini)")
+        {
+            throw "The specified file must be a .ini file"
+        }
+        return $true 
+    })]
+    [System.IO.FileInfo]$File
 )
 
 #Create Functions===========================================================================================================
@@ -23,36 +39,47 @@ Function New-RegistryValue
 {
     [CmdletBinding()]
     param(
-        [String][parameter(Mandatory=$true)]$Customization,    
-        [String][parameter(Mandatory=$true)]$RegKey,
-        [String][parameter(Mandatory=$true)]$Name,
-        [String][parameter(Mandatory=$true)]$PropertyType,
-        [String][parameter(Mandatory=$true)]$Value
+        [String][parameter(Mandatory=$true)][ValidateNotNullOrEmpty()]$Customization,    
+        [String][parameter(Mandatory=$true)][ValidateNotNullOrEmpty()]$RegKey,
+        [String][parameter(Mandatory=$true)][ValidateNotNullOrEmpty()]$Name,
+        [String][parameter(Mandatory=$true)][ValidateSet('String','ExpandString','Binary','DWord','MultiString','Qword','Unknown')]$PropertyType,
+        [String][parameter(Mandatory=$true)][ValidateNotNullOrEmpty()]$Value
     )
-    if (Test-Path Variable:$Customization)
-    {
-        Write-Host "Running Customization - $Customization"
+    Write-Output "Running Customization - $Customization"
         
-        #Create the registry key if it does not exist
-        if (!(Test-Path $RegKey))
+    #Create the registry key if it does not exist
+    if (!(Test-Path $RegKey))
+    {
+        try
         {
             New-Item -Path $RegKey -Force | Out-Null
         }
+        catch
+        {
+            throw "Failed to create $RegKey"
+        }
 
-        #Create the registry value
+    }
+
+    #Create the registry value
+    try
+    {
         New-ItemProperty -Path $RegKey -Name $Name -PropertyType $PropertyType -Value $Value -Force | Out-Null
+    }
+    catch
+    {
+        throw "Failed to set $RegKey\$Name to $Value"
+    }
 
-        #Check if the registry value was successfully created
-        $KeyCheck = Get-ItemProperty $RegKey
-        if ($KeyCheck.$Name -eq $Value)
-        {
-            Write-Host "Successfully set $RegKey\$Name to $Value"
-            Write-Host "`n"
-        }
-        else
-        {
-            throw "Failed to set $RegKey\$Name to $Value"
-        }
+    #Check if the registry value was successfully created
+    $KeyCheck = Get-ItemProperty $RegKey
+    if ($KeyCheck.$Name -eq $Value)
+    {
+        Write-Output "Successfully set $RegKey\$Name to $Value"
+    }
+    else
+    {
+        throw "Failed to set $RegKey\$Name to $Value"
     }
 }
 
@@ -119,18 +146,6 @@ Function Remove-RegistryHive
 }
 #===========================================================================================================================
 
-#Check that the specified parameters file exists
-if (!(Test-Path $File))
-{
-    throw "Could not find $File Please enter a vaild path to the parameters file."
-}
-
-#Check that the specified parameters file is an ini file
-$Extension = $File.Split('.')
-if ($Extension[1] -ne "ini")
-{
-    throw "$File is not an ini file. Please specify a file with a .ini extension."
-}
 
 #Read data from the parameters file
 $parameters = Get-Content $File
@@ -142,20 +157,33 @@ foreach ($parameter in $parameters){
     }
     else
     {
-        $Variable = $parameter.Split('=')
-        New-Variable -Name $Variable[0] -Value $Variable[1] -Force
+        try
+        {
+            $Variable = $parameter.Split('=')
+            New-Variable -Name $Variable[0].Trim() -Value $Variable[1].Trim() -Force
+        }
+        catch
+        {
+            throw "Failed to import $parameter from $file"    
+        }
     }
 }
 
 #Import Default Application Associations
-if ($DefaultApps)
+if ($NULL -ne $DefaultApps)
 {
     if ($DefaultApps -like "*.xml")
     {
-        Write-Host "Running Customization - Import Default Application Associations"
-        Dism.exe /Online /Import-DefaultAppAssociations:"$PSScriptRoot\$DefaultApps" | Out-Null
-        Write-Host "Done"
-        Write-Host "`n"
+        try
+        {
+            Write-Output "Running Customization - Import Default Application Associations"
+            Dism.exe /Online /Import-DefaultAppAssociations:"$PSScriptRoot\$DefaultApps" | Out-Null
+            Write-Output "Successfully imported default application associations."
+        }
+        catch
+        {
+            throw "Failed to import default application associations."
+        }
     }
     else
     {
@@ -164,14 +192,20 @@ if ($DefaultApps)
 }
 
 #Import Default Start Menu and Taskbar Layout
-if ($StartLayout)
+if ($NULL -ne $StartLayout)
 {
     if ($StartLayout -like "*.xml")
     {
-        Write-Host "Running Customizations - Import Default Start Menu and Taskbar layout"
-        Import-StartLayout -LayoutPath "$PSScriptRoot\$StartLayout" -MountPath "$Env:SystemDrive\"
-        Write-Host "Done"
-        Write-Host "`n"
+        try
+        {
+            Write-Output "Running Customizations - Import Default Start Menu and Taskbar layout"
+            Import-StartLayout -LayoutPath "$PSScriptRoot\$StartLayout" -MountPath "$Env:SystemDrive\"
+            Write-Output "Successfully imported Start layout."
+        }
+        catch
+        {
+            throw "Failed to import Start layout."
+        }
     }
     else
     {
@@ -180,49 +214,53 @@ if ($StartLayout)
 }
 
 #Run HKLM Registry Customizations
-if ($Cortana)
+if ($NULL -ne $Cortana)
 {
-    New-RegistryValue -Customization Cortana -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "AllowCortana" -PropertyType DWord -Value $Cortana
+    New-RegistryValue -Customization "Cortana" -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "AllowCortana" -PropertyType DWord -Value $Cortana
 }
-if ($OOBECortana)
+if ($NULL -ne $OOBECortana)
 {
-    New-RegistryValue -Customization OOBECortana -RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OOBE" -Name "DisableVoice" -PropertyType DWord -Value $OOBECortana
+    New-RegistryValue -Customization "OOBE Cortana" -RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OOBE" -Name "DisableVoice" -PropertyType DWord -Value $OOBECortana
 }
-if ($WifiSense)
+if ($NULL -ne $OOBEPrivacy)
 {
-    New-RegistryValue -Customization WifiSense -RegKey "HKLM:\SOFTWARE\Microsoft\PolicyManager\default\Wifi\AllowAutoConnectToWifiSenseHotspots" -Name "Value" -PropertyType DWord -Value $WifiSense
+    New-RegistryValue -Customization "Privacy Settings Experience" -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\OOBE" -Name "DisablePrivacyExperience" -PropertyType DWord -Value $OOBEPrivacy
 }
-if ($EdgeFirstRun)
+if ($NULL -ne $WifiSense)
 {
-    New-RegistryValue -Customization EdgeFirstRun -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\MicrosoftEdge\Main" -Name "PreventFirstRunPage" -PropertyType DWord -Value $EdgeFirstRun
+    New-RegistryValue -Customization "Wi-fi Sense" -RegKey "HKLM:\SOFTWARE\Microsoft\PolicyManager\default\Wifi\AllowAutoConnectToWifiSenseHotspots" -Name "Value" -PropertyType DWord -Value $WifiSense
 }
-if ($FirstLogonAnimation)
+if ($NULL -ne $EdgeFirstRun)
 {
-    New-RegistryValue -Customization FirstLogonAnimation -RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableFirstLogonAnimation" -PropertyType DWord -Value $FirstLogonAnimation
+    New-RegistryValue -Customization "Edge First Run" -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\MicrosoftEdge\Main" -Name "PreventFirstRunPage" -PropertyType DWord -Value $EdgeFirstRun
 }
-if ($ConsumerFeatures)
+if ($NULL -ne $FirstLogonAnimation)
 {
-    New-RegistryValue -Customization ConsumerFeatures -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Name "DisableWindowsConsumerFeatures" -PropertyType DWord -Value $ConsumerFeatures
+    New-RegistryValue -Customization "First Logon Animation" -RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableFirstLogonAnimation" -PropertyType DWord -Value $FirstLogonAnimation
 }
-if ($WindowsTips)
+if ($NULL -ne $ConsumerFeatures)
 {
-    New-RegistryValue -Customization WindowsTips -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Name "DisableSoftLanding" -PropertyType DWord -Value $WindowsTips
+    New-RegistryValue -Customization "Consumer Features" -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Name "DisableWindowsConsumerFeatures" -PropertyType DWord -Value $ConsumerFeatures
 }
-if ($EdgeDesktopShortcut)
+if ($NULL -ne $WindowsTips)
 {
-    New-RegistryValue -Customization EdgeDesktopShortcut -RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" -Name "DisableEdgeDesktopShortcutCreation" -PropertyType DWord -Value $EdgeDesktopShortcut
+    New-RegistryValue -Customization "Windows Tips" -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" -Name "DisableSoftLanding" -PropertyType DWord -Value $WindowsTips
 }
-if ($FileExplorerView)
+if ($NULL -ne $EdgeDesktopShortcut)
 {
-    New-RegistryValue -Customization FileExplorerView -RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "LaunchTo" -PropertyType DWord -Value $FileExplorerView
+    New-RegistryValue -Customization "Edge Desktop Shortcut" -RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" -Name "DisableEdgeDesktopShortcutCreation" -PropertyType DWord -Value $EdgeDesktopShortcut
 }
-if ($RunAsUserStart)
+if ($NULL -ne $FileExplorerView)
 {
-    New-RegistryValue -Customization RunAsUserStart -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" -Name "ShowRunasDifferentuserinStart" -PropertyType DWord -Value $RunAsUserStart
+    New-RegistryValue -Customization "File Explorer View" -RegKey "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "LaunchTo" -PropertyType DWord -Value $FileExplorerView
 }
-if ($FastStartup)
+if ($NULL -ne $RunAsUserStart)
 {
-    New-RegistryValue -Customization FastStartup -RegKey "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -PropertyType DWord -Value $FastStartup
+    New-RegistryValue -Customization "Run As User Start Menu" -RegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" -Name "ShowRunasDifferentuserinStart" -PropertyType DWord -Value $RunAsUserStart
+}
+if ($NULL -ne $FastStartup)
+{
+    New-RegistryValue -Customization "Fast Startup" -RegKey "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -PropertyType DWord -Value $FastStartup
 }
 
 #Load the Default User registry hive
@@ -230,29 +268,68 @@ $HiveName = "DefaultUserHive"
 Import-RegistryHive -File 'C:\Users\Default\NTUSER.DAT' -Key 'HKLM\DefaultUser' -Name $HiveName
 
 #Run Default User Registry Customizations
-if ($DefenderPrompt)
+if ($NULL -ne $DefenderPrompt)
 {
-    New-RegistryValue -Customization DefenderPrompt -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows Defender" -Name "UifirstRun" -PropertyType DWord -Value $DefenderPrompt
+    New-RegistryValue -Customization "Defender Prompt" -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows Defender" -Name "UifirstRun" -PropertyType DWord -Value $DefenderPrompt
 }
-if ($InkWorkspaceIcon)
+if ($OneDriveSetup = "Delete")
 {
-    New-RegistryValue -Customization InkWorkspaceIcon -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\PenWorkspace" -Name "PenWorkspaceButtonDesiredVisibility" -PropertyType DWord -Value $InkWorkspaceIcon
+    try
+    {
+        Write-Output "Running Customization - OneDrive Setup"
+        Remove-ItemProperty -Path "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "OneDriveSetup" -Force
+        Write-Output "Successfully disabled the OneDrive setup task." 
+    }
+    catch
+    {
+        throw "Failed to delete OneDriveSetup from $($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+    }
+
 }
-if ($TouchKeyboardIcon)
+if ($NULL -ne $InkWorkspaceIcon)
 {
-    New-RegistryValue -Customization TouchKeyboardIcon -RegKey "$($HiveName):\SOFTWARE\Microsoft\TabletTip\1.7" -Name "TipbandDesiredVisibility" -PropertyType DWord -Value $TouchKeyboardIcon
+    New-RegistryValue -Customization "Ink Workspace Icon" -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\PenWorkspace" -Name "PenWorkspaceButtonDesiredVisibility" -PropertyType DWord -Value $InkWorkspaceIcon
 }
-if ($SerachIcon)
+if ($NULL -ne $TouchKeyboardIcon)
 {
-    New-RegistryValue -Customization SerachIcon -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -PropertyType DWord -Value $SerachIcon
+    New-RegistryValue -Customization "Touch Keyboard Icon" -RegKey "$($HiveName):\SOFTWARE\Microsoft\TabletTip\1.7" -Name "TipbandDesiredVisibility" -PropertyType DWord -Value $TouchKeyboardIcon
 }
-if ($PeopleIcon)
+if ($NULL -ne $SearchIcon)
 {
-    New-RegistryValue -Customization PeopleIcon -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\People" -Name "PeopleBand" -PropertyType DWord -Value $PeopleIcon
+    New-RegistryValue -Customization "Search Icon" -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -PropertyType DWord -Value $SearchIcon
 }
-if ($TaskViewIcon)
+if ($NULL -ne $PeopleIcon)
 {
-    New-RegistryValue -Customization TaskViewIcon -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -PropertyType DWord -Value $TaskViewIcon
+    New-RegistryValue -Customization "People Icon" -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\People" -Name "PeopleBand" -PropertyType DWord -Value $PeopleIcon
+}
+if ($NULL -ne $TaskViewIcon)
+{
+    New-RegistryValue -Customization "Task View Icon" -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -PropertyType DWord -Value $TaskViewIcon
+}
+if ($NULL -ne $ThisPCDesktop)
+{
+    New-RegistryValue -Customization "This PC Desktop Shortcut" -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel" -Name "{20D04FE0-3AEA-1069-A2D8-08002B30309D}" -PropertyType DWord -Value $ThisPCDesktop
+}
+if ($NULL -ne $UserFilesDesktop)
+{
+    New-RegistryValue -Customization "User Files Desktop Shortcut" -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel" -Name "{59031a47-3f72-44a7-89c5-5595fe6b30ee}" -PropertyType DWord -Value $UserFilesDesktop
+}
+if ($NULL -ne $NetworkDesktop)
+{
+    New-RegistryValue -Customization "Network Desktop Shortcut" -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel" -Name "{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}" -PropertyType DWord -Value $NetworkDesktop
+}
+if ($NULL -ne $RecycleBinDesktop)
+{
+    New-RegistryValue -Customization "Recycle Bin Desktop Shortcut" -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel" -Name "{645FF040-5081-101B-9F08-00AA002F954E}" -PropertyType DWord -Value $RecycleBinDesktop
+    New-RegistryValue -Customization "Recycle Bin Desktop Shortcut" -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\ClassicStartMenu" -Name "{645FF040-5081-101B-9F08-00AA002F954E}" -PropertyType DWord -Value $RecycleBinDesktop
+}
+if ($NULL -ne $ControlPanelDesktop)
+{
+    New-RegistryValue -Customization "Control Panel Desktop Shortcut" -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel" -Name "{5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0}" -PropertyType DWord -Value $ControlPanelDesktop
+}
+if ($NULL -ne $WinXShell)
+{
+    New-RegistryValue -Customization "Win X Shell Option" -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "DontUsePowerShellOnWinX" -PropertyType DWord -Value $WinXShell
 }
 
 #Unload the Default User registry hive
@@ -266,7 +343,7 @@ while($true)
         #When Remove-RegistryHive is successful break will stop the loop
         $Count++
         Remove-RegistryHive -Name $HiveName
-        Write-Host 'Remove-RegistryHive succeeded. NTUSER.DAT updated successfully'
+        Write-Output 'Remove-RegistryHive succeeded. NTUSER.DAT updated successfully'
         break
     }
     catch
@@ -277,8 +354,8 @@ while($true)
             throw
         }
 
-        Write-Host 'Remove-RegistryHive failed, trying again...'
-        Write-Host "`n"
+        Write-Output 'Registry hive still in use, trying again...'
+        Write-Output "`n"
 
         #Wait for 100ms and trigger the garbage collector
         Start-Sleep -Milliseconds 100
