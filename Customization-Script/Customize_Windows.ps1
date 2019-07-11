@@ -272,7 +272,7 @@ if ($NULL -ne $DefenderPrompt)
 {
     New-RegistryValue -Customization "Defender Prompt" -RegKey "$($HiveName):\SOFTWARE\Microsoft\Windows Defender" -Name "UifirstRun" -PropertyType DWord -Value $DefenderPrompt
 }
-if ($OneDriveSetup = "Delete")
+if ($OneDriveSetup -eq "Delete")
 {
     try
     {
