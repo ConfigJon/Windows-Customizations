@@ -10,8 +10,11 @@
 	
     .NOTES
         Created by: Jon Anderson (@ConfigJon)
-        Updated 6/25/19
+        Updated 7/11/19
         Reference: https://github.com/ConfigJon/Windows-Customizations/tree/master/Customization-Script
+        
+    .CHANGELOG
+        7/11/19 - Fixed a syntax issue with the OneDriveSetup if statement
 #>
 
 #Create Parameters
