@@ -10,14 +10,16 @@
 	
     .NOTES
         Created by: Jon Anderson (@ConfigJon)
-        Updated 7/11/19
+        Updated 7/28/19
         Reference: https://github.com/ConfigJon/Windows-Customizations/tree/master/Customization-Script
         
     .CHANGELOG
-        7/11/19 - Fixed a syntax issue with the OneDriveSetup if statement
+        07/11/19 - Fixed a syntax issue with the OneDriveSetup if statement
+        07/28/19 - Formatting changes, no new functionality
 #>
 
-#Create Parameters
+#Parameters ===================================================================================================================
+
 param(
     [ValidateScript({
         if (!($_ | Test-Path))
@@ -37,7 +39,8 @@ param(
     [System.IO.FileInfo]$File
 )
 
-#Create Functions===========================================================================================================
+#Functions ====================================================================================================================
+
 Function New-RegistryValue
 {
     [CmdletBinding()]
@@ -147,8 +150,8 @@ Function Remove-RegistryHive
         throw [Management.Automation.PSInvalidOperationException] "The registry key '$Key' could not be unloaded, the key may still be in use."
     }
 }
-#===========================================================================================================================
 
+#Main program =================================================================================================================
 
 #Read data from the parameters file
 $parameters = Get-Content $File
