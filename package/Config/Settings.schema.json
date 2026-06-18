@@ -1,0 +1,467 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Windows Customizations settings",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "Organization": {
+      "type": "string",
+      "description": "Org name; used in the version-stamp registry path."
+    },
+    "FailureMode": {
+      "description": "Lenient = log and continue; Strict = any failure fails the app.",
+      "enum": [
+        "Lenient",
+        "Strict"
+      ]
+    },
+    "Customizations": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "SearchBoxMode": {
+          "description": "Taskbar search box: 0 = hidden, 1 = icon, 2 = box",
+          "enum": [
+            0,
+            1,
+            2
+          ]
+        },
+        "TaskbarAlignment": {
+          "description": "Taskbar alignment: 0 = left, 1 = center",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "TaskViewButton": {
+          "description": "Task View button: 0 = hidden, 1 = shown",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "TaskbarEndTask": {
+          "description": "End Task on taskbar right-click: 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "InkWorkspaceIcon": {
+          "description": "Pen/Ink Workspace icon: 0 = hidden, 1 = shown",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "TouchKeyboardIcon": {
+          "description": "Touch keyboard icon: 0 = hidden, 1 = shown",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "ResumeButton": {
+          "description": "Cross-device Resume taskbar badge: 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "OutlookTaskbarPin": {
+          "description": "Auto-pin the new Outlook app to the taskbar for new users: 0 = no, 1 = yes",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "CombineTaskbarButtons": {
+          "description": "Combine taskbar buttons and hide labels: 0 = always, 1 = when taskbar is full, 2 = never",
+          "enum": [
+            0,
+            1,
+            2
+          ]
+        },
+        "ShowSecondsInClock": {
+          "description": "Show seconds in the system tray clock (uses more power): 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "StartTrackRecentDocs": {
+          "description": "Show recently opened items in Start/Jump Lists: 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "StartTrackMostUsed": {
+          "description": "Show most-used apps in Start: 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "StartAccountNotifications": {
+          "description": "Account-related notifications on Start: 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "StartRecentlyAddedApps": {
+          "description": "Show recently added apps in Start: 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "StartRecommendations": {
+          "description": "Show recommendations for tips, shortcuts and new apps in Start: 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "StartAllAppsView": {
+          "description": "Start menu \"All apps\" view: 0 = Category, 1 = Grid, 2 = List",
+          "enum": [
+            0,
+            1,
+            2
+          ]
+        },
+        "LaunchTo": {
+          "description": "File Explorer opens to: 1 = This PC, 2 = Quick access/Home",
+          "enum": [
+            1,
+            2
+          ]
+        },
+        "HideFileExt": {
+          "description": "Known file extensions: 0 = show, 1 = hide",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "HiddenFiles": {
+          "description": "Hidden files and folders: 1 = show, 2 = hide",
+          "enum": [
+            1,
+            2
+          ]
+        },
+        "ColorMode": {
+          "description": "Default app & system color mode: 0 = dark, 1 = light",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "ThisPCDesktopIcon": {
+          "description": "This PC desktop icon: 0 = shown, 1 = hidden",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "UserFilesDesktopIcon": {
+          "description": "User Files desktop icon: 0 = shown, 1 = hidden",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "NetworkDesktopIcon": {
+          "description": "Network desktop icon: 0 = shown, 1 = hidden",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "ControlPanelDesktopIcon": {
+          "description": "Control Panel desktop icon: 0 = shown, 1 = hidden",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "RecycleBinDesktopIcon": {
+          "description": "Recycle Bin desktop icon (sets both icon panels): 0 = shown, 1 = hidden",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "EdgeDesktopShortcut": {
+          "description": "Delete the public-desktop Microsoft Edge shortcut",
+          "type": [
+            "boolean",
+            "integer"
+          ]
+        },
+        "SyncProviderNotifications": {
+          "description": "Sync provider (OneDrive promo) notifications in File Explorer: 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "ClassicContextMenu": {
+          "description": "Right-click context menu: 0 = Windows 11 (Show more options), 1 = classic full menu",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "BingSearchEnabled": {
+          "description": "Bing/web results in Start search: 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "WindowsTips": {
+          "description": "Windows tips/suggestions: 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "SuggestedContentSettings": {
+          "description": "Suggested content in the Settings app: 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "SuggestedContentStart": {
+          "description": "App suggestions/promoted apps in Start: 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "StartSuggestions": {
+          "description": "Tips/suggestions on the Start menu pane: 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "SilentInstalledApps": {
+          "description": "Silent auto-install of suggested apps: 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "PreInstalledApps": {
+          "description": "Pre-installed suggested apps: 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "OemPreInstalledApps": {
+          "description": "OEM pre-installed suggested apps: 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "SpotlightLockScreen": {
+          "description": "Windows Spotlight rotating lock screen: 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "SpotlightLockScreenOverlay": {
+          "description": "Windows Spotlight lock screen tips/ads overlay: 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "DefenderPrompt": {
+          "description": "Windows Defender first-run prompt: 0 = suppress",
+          "type": [
+            "boolean",
+            "integer"
+          ]
+        },
+        "FinishSettingUpPrompts": {
+          "description": "Post-update \"finish setting up your device\" / backup prompts (SCOOBE): 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "AdvertisingId": {
+          "description": "Advertising ID for app personalized ads: 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "TailoredExperiences": {
+          "description": "Personalized offers/tips from diagnostic data: 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "DesktopBackground": {
+          "description": "Desktop background source: 0 = Picture, 3 = Windows Spotlight",
+          "enum": [
+            0,
+            3
+          ]
+        },
+        "OneDriveSetup": {
+          "description": "Remove the OneDrive first-run auto-setup from the default profile",
+          "type": [
+            "boolean",
+            "integer"
+          ]
+        },
+        "RemoveOfficeApps": {
+          "description": "Uninstall pre-installed Microsoft 365 / OneNote stubs (Click-to-Run)",
+          "type": [
+            "boolean",
+            "integer"
+          ]
+        },
+        "RemoveProvisionedApps": {
+          "description": "Remove provisioned UWP apps. Config may override the list with an array.",
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "DefaultAppAssociations": {
+          "description": "Import default file/protocol associations (package\\Assets\\AppAssociations\\AppAssociations.xml)",
+          "type": [
+            "boolean",
+            "integer"
+          ]
+        },
+        "FastStartup": {
+          "description": "Fast Startup (hiberboot): 0 = disabled, 1 = enabled",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "ClipboardHistory": {
+          "description": "Clipboard history (Win+V): 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "NetworkNotification": {
+          "description": "Suppress the \"new network location\" flyout",
+          "type": [
+            "boolean",
+            "integer"
+          ]
+        },
+        "EnableLocationServices": {
+          "description": "Enable location services (machine consent). Prerequisite for DynamicTime.",
+          "type": [
+            "boolean",
+            "integer"
+          ]
+        },
+        "DynamicTime": {
+          "description": "Set the time zone automatically (requires EnableLocationServices)",
+          "type": [
+            "boolean",
+            "integer"
+          ]
+        },
+        "StickyKeysShortcut": {
+          "description": "Sticky Keys keyboard shortcut (press Shift 5 times): 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "DesktopWallpaper": {
+          "description": "Replace the default desktop wallpaper (package\\Assets\\Branding\\img0.jpg + 4k\\)",
+          "type": [
+            "boolean",
+            "integer"
+          ]
+        },
+        "LockScreenImage": {
+          "description": "Replace the default lock screen image (package\\Assets\\Branding\\img100.jpg)",
+          "type": [
+            "boolean",
+            "integer"
+          ]
+        },
+        "TaskbarPins": {
+          "description": "Seed default taskbar pins (user can still change them)",
+          "type": [
+            "boolean",
+            "integer"
+          ]
+        },
+        "StartLayout": {
+          "description": "Seed default Start menu layout (start2.bin)",
+          "type": [
+            "boolean",
+            "integer"
+          ]
+        },
+        "EdgeFirstRun": {
+          "description": "Suppress Edge first-run experience.",
+          "enum": [
+            1
+          ]
+        },
+        "OOBEPrivacyExperience": {
+          "description": "Skip the OOBE privacy-settings page.",
+          "enum": [
+            1
+          ]
+        },
+        "FirstLogonAnimation": {
+          "description": "First-logon animation (machine policy): 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "WidgetsButton": {
+          "description": "Widgets button (machine policy): 0 = hidden, 1 = shown",
+          "enum": [
+            0,
+            1
+          ]
+        }
+      }
+    }
+  },
+  "required": [
+    "Organization",
+    "Customizations"
+  ]
+}

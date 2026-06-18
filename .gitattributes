@@ -1,0 +1,14 @@
+* text=auto eol=crlf
+
+*.ps1  text eol=crlf
+*.psm1 text eol=crlf
+*.psd1 text eol=crlf
+*.json text eol=crlf
+*.md   text eol=crlf
+
+*.jpg       binary
+*.jpeg      binary
+*.png       binary
+*.bmp       binary
+*.bin       binary
+*.intunewin binary
