@@ -196,22 +196,33 @@ replacements so users can still change them.
 ### 4a. Desktop wallpaper
 
 Windows ships a base `img0.jpg` plus a 4K render. **Older builds shipped a full multi-resolution
-set** (`1024x768` … `3840x2160` plus portrait variants), but current builds (e.g. a fresh **25H2**
-install) ship only a single 1920x1200 render in the 4K folder:
+set** (`1024x768` … `3840x2160` plus portrait variants), but current builds (e.g. a fresh **25H2** or
+**26H2** install) ship only a single 1920x1200 render in the 4K folder. They also ship a second,
+**dark** wallpaper, `img19`, which `dark.theme` uses:
 
 ```
-C:\Windows\Web\Wallpaper\Windows\img0.jpg          <- base image
-C:\Windows\Web\4K\Wallpaper\Windows\img0_1920x1200.jpg   <- only 4K variant present
+C:\Windows\Web\Wallpaper\Windows\img0.jpg                 <- light (Windows (light) / aero.theme)
+C:\Windows\Web\Wallpaper\Windows\img19.jpg                <- dark (Windows (dark) / dark.theme)
+C:\Windows\Web\4K\Wallpaper\Windows\img0_1920x1200.jpg    <- only 4K variants present
+C:\Windows\Web\4K\Wallpaper\Windows\img19_1920x1200.jpg
 ```
+
+> **Dark mode needs the dark slot branded.** `ColorMode = 0` seeds `dark.theme`, so new users see
+> `img19`, not `img0`. The engine brands both: supply only `img0.jpg` (+ `4k\img0_*.jpg`) and it is
+> reused for the dark slot, or supply a separate `img19.jpg` (+ `4k\img19_*.jpg`) to give dark mode its
+> own render.
 
 Only files that already exist as Windows defaults are referenced — dropping extra resolutions
 (e.g. `img0_3840x2160.jpg`) just leaves unused files on disk. **Check the 4K folder on *your*
 reference build** and render to whatever variants it actually contains.
 
-1. Produce your wallpaper as `.jpg`. On 25H2 you need just two renders: the base image and a
+1. Produce your wallpaper as `.jpg`. On 25H2/26H2 you need just two renders: the base image and a
    1920x1200 version.
 2. Place the base image as `package\Assets\Branding\img0.jpg` and the 4K render(s) under
    `package\Assets\Branding\4k\` (filenames matching the originals on your build, e.g. `img0_1920x1200.jpg`).
+3. *(Optional)* For a different dark-mode image, add `package\Assets\Branding\img19.jpg` and
+   `package\Assets\Branding\4k\img19_1920x1200.jpg`. When you supply `img19.jpg`, the engine stops
+   reusing the `img0` 4K renders for the dark slot, so include the dark 4K render too.
 
 ### 4b. Lock screen image
 

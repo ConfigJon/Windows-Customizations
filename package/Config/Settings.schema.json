@@ -23,11 +23,12 @@
       "additionalProperties": false,
       "properties": {
         "SearchBoxMode": {
-          "description": "Taskbar search box: 0 = hidden, 1 = icon, 2 = box",
+          "description": "Taskbar search: 0 = hidden, 1 = icon only, 2 = search box, 3 = icon and label",
           "enum": [
             0,
             1,
-            2
+            2,
+            3
           ]
         },
         "TaskbarAlignment": {
@@ -92,6 +93,14 @@
           "enum": [
             0,
             1
+          ]
+        },
+        "SmallerTaskbarButtons": {
+          "description": "Show smaller taskbar buttons: 0 = always, 1 = never, 2 = when taskbar is full",
+          "enum": [
+            0,
+            1,
+            2
           ]
         },
         "StartTrackRecentDocs": {
@@ -228,6 +237,20 @@
             1
           ]
         },
+        "CloudSearchMicrosoftAccount": {
+          "description": "Windows Search results from the personal Microsoft account (e.g. OneDrive, Outlook): 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "CloudSearchWorkAccount": {
+          "description": "Windows Search results from the work or school account (e.g. OneDrive, SharePoint, Outlook): 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
         "WindowsTips": {
           "description": "Windows tips/suggestions: 0 = off, 1 = on",
           "enum": [
@@ -236,7 +259,7 @@
           ]
         },
         "SuggestedContentSettings": {
-          "description": "Suggested content in the Settings app: 0 = off, 1 = on",
+          "description": "Recommendations and offers (suggested content) in the Settings app: 0 = off, 1 = on",
           "enum": [
             0,
             1
@@ -319,6 +342,13 @@
             1
           ]
         },
+        "FeedbackFrequency": {
+          "description": "Windows feedback requests (Diagnostics & feedback > Feedback frequency): 0 = never",
+          "type": [
+            "boolean",
+            "integer"
+          ]
+        },
         "DesktopBackground": {
           "description": "Desktop background source: 0 = Picture, 3 = Windows Spotlight",
           "enum": [
@@ -375,6 +405,13 @@
             1
           ]
         },
+        "GameBarControllerButton": {
+          "description": "Open Game Bar with the controller Xbox button: 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
         "NetworkNotification": {
           "description": "Suppress the \"new network location\" flyout",
           "type": [
@@ -404,7 +441,7 @@
           ]
         },
         "DesktopWallpaper": {
-          "description": "Replace the default desktop wallpaper (package\\Assets\\Branding\\img0.jpg + 4k\\)",
+          "description": "Replace the default light and dark desktop wallpapers (package\\Assets\\Branding\\img0.jpg, optional img19.jpg, + 4k\\)",
           "type": [
             "boolean",
             "integer"

@@ -391,10 +391,34 @@ function Invoke-CustomHandler
         'SearchBoxMode'
         {
             $SearchKey = "$($HiveDrive):\SOFTWARE\Microsoft\Windows\CurrentVersion\Search"
-            Set-RegistryValue -RegKey $SearchKey -Name 'SearchboxTaskbarMode' -PropertyType 'DWord' -Value $Value
-            # 24H2/25H2 "migrates" (resets) SearchboxTaskbarMode to 2 on first logon unless the
-            # companion cache value already exists. Seed it so the chosen mode sticks.
-            Set-RegistryValue -RegKey $SearchKey -Name 'SearchboxTaskbarModeCache' -PropertyType 'DWord' -Value 1
+            if ($Value -eq 2)
+            {
+                # The search box is Windows' own first-logon default: with no seeded mode the shell writes
+                # SearchboxTaskbarMode=2 + SearchboxTaskbarModeCache=1 itself. A PRE-SEEDED 2 is rewritten to
+                # 1 (icon) at first logon (verified on 26H2 with the cache at 1 or 2), so seed nothing for 2 and
+                # clear any mode an earlier run left in the hive.
+                if (Test-Path -Path $SearchKey)
+                {
+                    Remove-ItemProperty -Path $SearchKey -Name 'SearchboxTaskbarMode', 'SearchboxTaskbarModeCache' -Force -ErrorAction SilentlyContinue
+                }
+            }
+            else
+            {
+                Set-RegistryValue -RegKey $SearchKey -Name 'SearchboxTaskbarMode' -PropertyType 'DWord' -Value $Value
+                # SearchboxTaskbarModeCache=1 is the "first-run done" marker the shell writes itself. Without it
+                # the shell resets the mode to its default (the search box) at first logon.
+                Set-RegistryValue -RegKey $SearchKey -Name 'SearchboxTaskbarModeCache' -PropertyType 'DWord' -Value 1
+            }
+        }
+        'SuggestedContentSettings'
+        {
+            # The Settings toggle "Recommendations and offers in Settings" reads three ContentDeliveryManager
+            # values and stays On while any of them is missing or 1, so seeding only 338393 leaves it On.
+            $CdmKey = "$($HiveDrive):\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
+            foreach ($ContentId in '338393', '353694', '353696')
+            {
+                Set-RegistryValue -RegKey $CdmKey -Name "SubscribedContent-$($ContentId)Enabled" -PropertyType 'DWord' -Value $Value
+            }
         }
         'RecycleBinDesktopIcon'
         {
@@ -556,14 +580,30 @@ function Invoke-CustomHandler
         }
         'DesktopWallpaper'
         {
+            # aero.theme (light) shows img0; dark.theme - which ColorMode=0 seeds - shows img19. Brand both so
+            # the org wallpaper appears in either mode. An optional img19.jpg asset supplies a separate dark
+            # render; without one, img0 (and each 4k\img0_<res>.jpg) is reused for the dark slot too.
             $BrandingRoot = Join-Path -Path (Get-PackageRoot) -ChildPath 'Assets\Branding'
-            Set-ProtectedFile -Source (Join-Path -Path $BrandingRoot -ChildPath 'img0.jpg') -Destination "$env:WINDIR\Web\Wallpaper\Windows\img0.jpg"
+            $LightImage = Join-Path -Path $BrandingRoot -ChildPath 'img0.jpg'
+            $DarkImage = Join-Path -Path $BrandingRoot -ChildPath 'img19.jpg'
+            $HasDarkAsset = Test-Path -Path $DarkImage
+            if (-not $HasDarkAsset)
+            {
+                $DarkImage = $LightImage
+            }
+            Set-ProtectedFile -Source $LightImage -Destination "$env:WINDIR\Web\Wallpaper\Windows\img0.jpg"
+            Set-ProtectedFile -Source $DarkImage -Destination "$env:WINDIR\Web\Wallpaper\Windows\img19.jpg"
             $FourKRoot = Join-Path -Path $BrandingRoot -ChildPath '4k'
             if (Test-Path -Path $FourKRoot)
             {
                 foreach ($Image in (Get-ChildItem -Path $FourKRoot -File))
                 {
                     Set-ProtectedFile -Source $Image.FullName -Destination "$env:WINDIR\Web\4K\Wallpaper\Windows\$($Image.Name)"
+                    if (-not $HasDarkAsset -and $Image.Name -like 'img0_*')
+                    {
+                        $DarkName = 'img19_' + $Image.Name.Substring(5)
+                        Set-ProtectedFile -Source $Image.FullName -Destination "$env:WINDIR\Web\4K\Wallpaper\Windows\$DarkName"
+                    }
                 }
             }
         }

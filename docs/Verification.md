@@ -43,7 +43,8 @@ are `Custom` handlers that write into the same hive. `0`/`1` meanings are in the
 
 | Setting | Value (under the hive root) | Where it shows in the UI |
 |---|---|---|
-| SearchBoxMode | `...\CurrentVersion\Search` \ `SearchboxTaskbarMode` | Taskbar search box mode (Settings > Personalization > Taskbar > Search) |
+| SearchBoxMode | `...\CurrentVersion\Search` \ `SearchboxTaskbarMode` (+ `SearchboxTaskbarModeCache` = 1). For **2 (search box) the hive holds neither value** by design: Windows writes 2 + cache 1 itself at first logon, so check a new user's HKCU instead | Taskbar search (Settings > Personalization > Taskbar > Search): 0 hide, 1 icon only, 2 search box, 3 icon and label |
+| SmallerTaskbarButtons | `...\Explorer\Advanced` \ `IconSizePreference` | Taskbar > Taskbar behaviors > Show smaller taskbar buttons (0 always, 1 never, 2 when full) |
 | TaskbarAlignment | `...\Explorer\Advanced` \ `TaskbarAl` | Taskbar left/center |
 | WidgetsButton | `HKLM\...\Policies\Microsoft\Dsh` \ `AllowNewsAndInterests` (machine policy; locks) | Widgets button on the taskbar |
 | TaskViewButton | `...\Explorer\Advanced` \ `ShowTaskViewButton` | Task View button |
@@ -60,7 +61,7 @@ are `Custom` handlers that write into the same hive. `0`/`1` meanings are in the
 | *DesktopIcon | `...\Explorer\HideDesktopIcons\NewStartPanel` \ `{GUID}` | Desktop icons: This PC, User Files, Network, Control Panel (Recycle Bin sets the GUID under both `NewStartPanel` and `ClassicStartMenu`) |
 | BingSearchEnabled | `...\CurrentVersion\Search` \ `BingSearchEnabled` | Start search shows web/Bing results when `1` |
 | WindowsTips | `...\ContentDeliveryManager` \ `SubscribedContent-338389Enabled` | Windows tip notifications |
-| SuggestedContentSettings | `...\ContentDeliveryManager` \ `SubscribedContent-338393Enabled` | Suggested content cards in the Settings app |
+| SuggestedContentSettings | `...\ContentDeliveryManager` \ `SubscribedContent-338393Enabled`, `-353694Enabled`, `-353696Enabled` (all three) | Privacy & security > Recommendations & offers > "Recommendations and offers in Settings" (shows On if any of the three is missing) |
 | SuggestedContentStart | `...\ContentDeliveryManager` \ `SubscribedContent-338388Enabled` | Promoted apps in Start |
 | StartSuggestions | `...\ContentDeliveryManager` \ `SystemPaneSuggestionsEnabled` | Tips/suggestions in the Start pane |
 | SilentInstalledApps | `...\ContentDeliveryManager` \ `SilentInstalledAppsEnabled` | Auto-installed promoted apps |
@@ -75,6 +76,9 @@ are `Custom` handlers that write into the same hive. `0`/`1` meanings are in the
 | AdvertisingId | `...\CurrentVersion\AdvertisingInfo` \ `Enabled` | Privacy & security > General > advertising ID |
 | TailoredExperiences | `...\CurrentVersion\Privacy` \ `TailoredExperiencesWithDiagnosticDataEnabled` | Privacy & security > General > "Personalized offers" |
 | ClipboardHistory | `Software\Microsoft\Clipboard` \ `EnableClipboardHistory` | System > Clipboard > Clipboard history |
+| CloudSearchMicrosoftAccount / CloudSearchWorkAccount | `...\CurrentVersion\SearchSettings` \ `IsMSACloudSearchEnabled` / `IsAADCloudSearchEnabled` | Privacy & security > Search > Cloud content search > Microsoft account / Work or School account |
+| FeedbackFrequency | `Software\Microsoft\Siuf\Rules` \ `NumberOfSIUFInPeriod` | Privacy & security > Diagnostics & feedback > Feedback frequency = Never |
+| GameBarControllerButton | `Software\Microsoft\GameBar` \ `UseNexusForGameBarEnabled` | Gaming > Game Bar > Allow your controller to open Game Bar |
 | StickyKeysShortcut | `Control Panel\Accessibility\StickyKeys` \ `Flags` (REG_SZ; `506` = off, `510` = on) | Accessibility > Keyboard > Sticky keys shortcut |
 
 The privacy/debloat values (`ContentDeliveryManager`, `BingSearchEnabled`, `DefenderPrompt`)

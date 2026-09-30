@@ -20,10 +20,10 @@
         @{
             Name          = 'SearchBoxMode'
             Category      = 'Taskbar'
-            Description   = 'Taskbar search box: 0 = hidden, 1 = icon, 2 = box'
+            Description   = 'Taskbar search: 0 = hidden, 1 = icon only, 2 = search box, 3 = icon and label'
             Mechanism     = 'Custom'
             NeedsHive     = $true
-            AllowedValues = @(0, 1, 2)
+            AllowedValues = @(0, 1, 2, 3)
         },
         @{
             Name          = 'TaskbarAlignment'
@@ -112,6 +112,16 @@
             ValueName     = 'ShowSecondsInSystemClock'
             Type          = 'DWord'
             AllowedValues = @(0, 1)
+        },
+        @{
+            Name          = 'SmallerTaskbarButtons'
+            Category      = 'Taskbar'
+            Description   = 'Show smaller taskbar buttons: 0 = always, 1 = never, 2 = when taskbar is full'
+            Mechanism     = 'DefaultHive'
+            Path          = 'SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced'
+            ValueName     = 'IconSizePreference'
+            Type          = 'DWord'
+            AllowedValues = @(0, 1, 2)
         },
 
         # =========================== START (DefaultHive) ====================================
@@ -303,6 +313,26 @@
             AllowedValues = @(0, 1)
         },
         @{
+            Name          = 'CloudSearchMicrosoftAccount'
+            Category      = 'Debloat'
+            Description   = 'Windows Search results from the personal Microsoft account (e.g. OneDrive, Outlook): 0 = off, 1 = on'
+            Mechanism     = 'DefaultHive'
+            Path          = 'SOFTWARE\Microsoft\Windows\CurrentVersion\SearchSettings'
+            ValueName     = 'IsMSACloudSearchEnabled'
+            Type          = 'DWord'
+            AllowedValues = @(0, 1)
+        },
+        @{
+            Name          = 'CloudSearchWorkAccount'
+            Category      = 'Debloat'
+            Description   = 'Windows Search results from the work or school account (e.g. OneDrive, SharePoint, Outlook): 0 = off, 1 = on'
+            Mechanism     = 'DefaultHive'
+            Path          = 'SOFTWARE\Microsoft\Windows\CurrentVersion\SearchSettings'
+            ValueName     = 'IsAADCloudSearchEnabled'
+            Type          = 'DWord'
+            AllowedValues = @(0, 1)
+        },
+        @{
             Name          = 'WindowsTips'
             Category      = 'Debloat'
             Description   = 'Windows tips/suggestions: 0 = off, 1 = on'
@@ -315,11 +345,9 @@
         @{
             Name          = 'SuggestedContentSettings'
             Category      = 'Debloat'
-            Description   = 'Suggested content in the Settings app: 0 = off, 1 = on'
-            Mechanism     = 'DefaultHive'
-            Path          = 'SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager'
-            ValueName     = 'SubscribedContent-338393Enabled'
-            Type          = 'DWord'
+            Description   = 'Recommendations and offers (suggested content) in the Settings app: 0 = off, 1 = on'
+            Mechanism     = 'Custom'
+            NeedsHive     = $true
             AllowedValues = @(0, 1)
         },
         @{
@@ -433,6 +461,16 @@
             AllowedValues = @(0, 1)
         },
         @{
+            Name          = 'FeedbackFrequency'
+            Category      = 'Debloat'
+            Description   = 'Windows feedback requests (Diagnostics & feedback > Feedback frequency): 0 = never'
+            Mechanism     = 'DefaultHive'
+            Path          = 'SOFTWARE\Microsoft\Siuf\Rules'
+            ValueName     = 'NumberOfSIUFInPeriod'
+            Type          = 'DWord'
+            AllowedValues = @(0)
+        },
+        @{
             Name          = 'DesktopBackground'
             Category      = 'Debloat'
             Description   = 'Desktop background source: 0 = Picture, 3 = Windows Spotlight'
@@ -537,6 +575,16 @@
             AllowedValues = @(0, 1)
         },
         @{
+            Name          = 'GameBarControllerButton'
+            Category      = 'System'
+            Description   = 'Open Game Bar with the controller Xbox button: 0 = off, 1 = on'
+            Mechanism     = 'DefaultHive'
+            Path          = 'SOFTWARE\Microsoft\GameBar'
+            ValueName     = 'UseNexusForGameBarEnabled'
+            Type          = 'DWord'
+            AllowedValues = @(0, 1)
+        },
+        @{
             Name        = 'NetworkNotification'
             Category    = 'System'
             Description = 'Suppress the "new network location" flyout'
@@ -573,7 +621,7 @@
         @{
             Name        = 'DesktopWallpaper'
             Category    = 'Branding'
-            Description = 'Replace the default desktop wallpaper (package\Assets\Branding\img0.jpg + 4k\)'
+            Description = 'Replace the default light and dark desktop wallpapers (package\Assets\Branding\img0.jpg, optional img19.jpg, + 4k\)'
             Mechanism   = 'Custom'
             NeedsHive   = $false
         },

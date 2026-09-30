@@ -1,2 +1,5 @@
 # Build output (packages, staging, generated detection scripts)
 /out/
+
+# Local-only VM lab tooling (host-specific, holds lab credentials) - see Tests\Lab\README.md
+/Tests/Lab/

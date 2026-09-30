@@ -36,7 +36,7 @@ user-changeable.
 
 | Setting | What it does | Mech | Default |
 |---|---|---|---|
-| Desktop wallpaper | Replace default `img0.jpg` + 4K resolution set. **Only visible when the background is set to Picture** — pair with `DesktopBackground = 0`, since Windows Spotlight overrides the wallpaper | ⚙️ | Org image; user can change |
+| Desktop wallpaper | Replace the default light (`img0.jpg`) **and dark (`img19.jpg`)** wallpapers + 4K renders. Dark mode (`ColorMode = 0`) applies `dark.theme`, which uses `img19`, so both are branded (an optional `img19.jpg` asset gives dark mode its own render). **Only visible when the background is set to Picture** — pair with `DesktopBackground = 0`, since Windows Spotlight overrides the wallpaper | ⚙️ | Org image; user can change |
 | Lock screen image | Replace the default image **file** (not the policy, which locks it) | ⚙️ | Org image; changeable |
 | Windows Spotlight off | Disable rotating lock screen / desktop Spotlight so branding shows | ✅ | Off |
 
@@ -51,7 +51,8 @@ user-changeable.
 | Setting | What it does | Mech | Default |
 |---|---|---|---|
 | Taskbar alignment | Left vs Center | ✅ | configurable |
-| Search box mode | Hidden / icon / box | ✅ | Icon |
+| Search box mode | Hidden / icon only / search box / icon and label. The search box (2) is Windows' own first-logon default and a pre-seeded 2 is downgraded to icon at first logon, so for 2 the engine seeds nothing and lets Windows apply it | ✅ | Icon |
+| Smaller taskbar buttons | "Show smaller taskbar buttons": always / never / when taskbar is full (`IconSizePreference`) | ✅ | configurable |
 | Task View button | Show / hide | ✅ | configurable |
 | Widgets button | Show / hide. Per-user `TaskbarDa` is blocked by the UCPD.sys driver, so this uses the `Dsh\AllowNewsAndInterests` machine policy | 🔒 | Off |
 | New Outlook taskbar auto-pin | Suppress the auto-pinned new Outlook (keeps the app). Explorer pins it at first logon ignoring any seed, so a first-logon RunOnce sets `Taskband\AuxilliaryPins\MailPin=0`; pin shows on the **first** logon only, gone from the second on | ✅ | Off |
@@ -82,9 +83,11 @@ user-changeable.
 |---|---|---|---|
 | Remove provisioned UWP apps | Curated removal list | ⚙️ | curated |
 | Remove Office stub / new Outlook / Dev Home / Copilot app | Uninstall the consumer Office/OneNote stubs and listed apps | ⚙️ | configurable |
-| Suggested content / consumer ads off | ContentDeliveryManager keys (changeable) instead of the `DisableWindowsConsumerFeatures` policy | ✅ | Off |
+| Suggested content / consumer ads off | ContentDeliveryManager keys (changeable) instead of the `DisableWindowsConsumerFeatures` policy. "Recommendations and offers in Settings" needs three of them (`SubscribedContent-338393/353694/353696Enabled`) | ✅ | Off |
 | Windows Tips off | SubscribedContent toggle | ✅ | Off |
 | Bing / web results in Start search off | Disable Bing/web results in Start search | ✅ | Off |
+| Cloud content search | Windows Search results from the personal Microsoft account and from the work/school account, each on its own (`SearchSettings\IsMSACloudSearchEnabled` / `IsAADCloudSearchEnabled`) | ✅ | configurable |
+| Feedback requests off | Diagnostics & feedback > Feedback frequency = Never (`Siuf\Rules\NumberOfSIUFInPeriod = 0`), not the locking `DoNotShowFeedbackNotifications` policy | ✅ | Never |
 | Advertising ID off | `AdvertisingInfo\Enabled` (non-policy; stays changeable) | ✅ | Off |
 | Tailored experiences / "Personalized offers" off | `Privacy\TailoredExperiencesWithDiagnosticDataEnabled` (non-policy) | ✅ | Off |
 | OneDrive auto-setup | Remove the default Run key | ✅ | Removed |
@@ -100,6 +103,7 @@ user-changeable.
 | Dynamic time zone | Location consent + `tzautoupdate` service | ⚙️ | On |
 | Fast Startup | Enable / disable | ⚙️ | configurable |
 | Clipboard history | `Software\Microsoft\Clipboard\EnableClipboardHistory` (non-policy; note the non-standard root) | ✅ | configurable |
+| Game Bar controller button | "Allow your controller to open Game Bar" (`GameBar\UseNexusForGameBarEnabled`) | ✅ | configurable |
 | First logon animation | Policy (machine-wide) | 🔒 | Optional, off |
 
 ## G. Accessibility ✅
