@@ -1,11 +1,11 @@
 <#
     .SYNOPSIS
-        Uninstall action for the Windows Customizations Win32 app.
+        Uninstall action for the Windows Customizations app (Intune Win32 app or ConfigMgr application).
 
     .DESCRIPTION
-        Removes only the HKLM version stamp, which flips the Intune detection rule to
-        "not installed". It does NOT revert any customization: the Default User hive seeds,
-        the ClassicContextMenu Active Setup component, machine-level/policy registry keys,
+        Removes only the HKLM version stamp, which flips the detection rule to "not installed".
+        It does NOT revert any customization: the Default User hive seeds, the
+        ClassicContextMenu Active Setup component, machine-level/policy registry keys,
         replaced branding files, and removed apps all remain. So new users still inherit most
         customizations after uninstall. Per-user values are intentionally left in place - they
         live in individual profiles and are user-changeable by design. A full teardown
@@ -15,7 +15,8 @@
 [CmdletBinding()]
 param()
 
-# Re-launch 64-bit when started from the 32-bit IME host (AMD64 or ARM64 native).
+# Re-launch 64-bit when started from a 32-bit host - the IME or a task sequence step (AMD64 or
+# ARM64 native).
 if ($env:PROCESSOR_ARCHITEW6432 -in 'AMD64', 'ARM64')
 {
     try

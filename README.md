@@ -2,7 +2,8 @@
 
 A Win32 app, assigned to **devices** and run during Windows Autopilot, that applies a curated
 set of Windows 11 settings (taskbar, Start, Explorer, default apps, debloat, branding) as
-**defaults a non-admin user can still change**.
+**defaults a non-admin user can still change**. The same package can also run as a
+Configuration Manager task sequence step ([docs/ConfigMgr.md](docs/ConfigMgr.md)).
 
 ## Why this exists
 
@@ -21,7 +22,7 @@ generic applier walks the catalog and dispatches each item to a mechanism handle
 (`DefaultHive`, `HKLM`, `Policy`, `File`, `AppRemoval`, `Dism`, `Custom`).
 
 ```
-Intune (device ESP, SYSTEM)
+Intune (device ESP, SYSTEM)  -- or a ConfigMgr task sequence step (full OS, SYSTEM)
   -> Set-WindowsCustomizations.ps1
        validate config -> machine-level pass -> Default User hive pass
        -> version stamp -> CMTrace log -> exit code (per FailureMode)
@@ -31,14 +32,14 @@ Intune (device ESP, SYSTEM)
 
 | Path | Purpose |
 |---|---|
-| [package/](package/) | The `.intunewin` payload (ships to the device): install/uninstall entry scripts plus the subfolders below |
+| [package/](package/) | The payload that ships to the device (the `.intunewin`, or the ConfigMgr content source): install/uninstall entry scripts plus the subfolders below |
 | &nbsp;&nbsp;[package/Engine/](package/Engine/) | Catalog, mechanism handlers, Active Setup, logging, version |
 | &nbsp;&nbsp;[package/Config/](package/Config/) | `Settings.json` selections + generated `Settings.schema.json` (VS Code validation) |
 | &nbsp;&nbsp;[package/Assets/](package/Assets/) | Org-specific content: branding, layout, app associations (you capture these) |
 | [tools/](tools/) | Dev/admin scripts (not shipped): `Configure-Settings.ps1`, `New-Package.ps1`, `Update-SettingsSchema.ps1`, `Detect-WindowsCustomizations.ps1` |
 | [Tests/](Tests/) | Pester static suite + manual device-test procedure |
 | [docs/](docs/) | Customization list, design, asset-capture guide, [verification cheatsheet](docs/Verification.md) |
-| [out/](out/) | Build output (`.intunewin` + stamped detection script); gitignored |
+| [out/](out/) | Build output (`.intunewin` or ConfigMgr content folder + stamped detection script); gitignored |
 
 ## Quick start
 
@@ -56,24 +57,31 @@ Intune (device ESP, SYSTEM)
 3. **Test.** Run `.\Tests\Invoke-Tests.ps1` (static checks), then validate on a throwaway
    Windows 11 VM per [Tests/README.md](Tests/README.md).
 4. **Build.** `.\tools\New-Package.ps1 -ContentPrepToolPath <path to IntuneWinAppUtil.exe>`
-   produces the `.intunewin` and a version-stamped detection script in `out\`.
+   produces the `.intunewin` and a version-stamped detection script in `out\`. For
+   Configuration Manager, run `.\tools\New-Package.ps1 -Target ConfigMgr` instead: it writes a
+   content-source folder and needs no Content Prep Tool.
 5. **Deploy.** Create an Intune Win32 app:
    - Install: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File Set-WindowsCustomizations.ps1`
    - Uninstall: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File Remove-WindowsCustomizations.ps1`
    - Detection: the custom script emitted by the build
    - Assign to **devices** (runs in the Autopilot device ESP).
 
+   **Or with Configuration Manager:** add it as a task sequence step after *Setup Windows and
+   ConfigMgr*. [docs/ConfigMgr.md](docs/ConfigMgr.md) covers the package, step placement, the
+   optional application model, and logs.
+
 ## Documentation
 
 - [docs/Customizations.md](docs/Customizations.md) - the target customization list (what, and which mechanism)
 - [docs/Design.md](docs/Design.md) - architecture of record (engine, config, packaging)
 - [docs/Asset-Preparation.md](docs/Asset-Preparation.md) - capturing branding / app associations / layout
+- [docs/ConfigMgr.md](docs/ConfigMgr.md) - deploying as a Configuration Manager task sequence step
 - [Tests/README.md](Tests/README.md) - running the tests and the manual device procedure
 
 ## Requirements
 
 - Target: **Windows 11** (Windows 10 reached end-of-support in October 2025).
-- Engine runs under the Intune Management Extension's **Windows PowerShell 5.1**; the script
-  re-launches itself 64-bit.
+- Engine runs under **Windows PowerShell 5.1** (from the Intune Management Extension or a
+  task sequence step); the script re-launches itself 64-bit.
 - Build/test tooling: **Pester 5**, optional **PSScriptAnalyzer**, and the Microsoft
   [Win32 Content Prep Tool](https://github.com/microsoft/Microsoft-Win32-Content-Prep-Tool).

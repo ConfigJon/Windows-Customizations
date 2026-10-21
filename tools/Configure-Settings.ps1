@@ -407,7 +407,7 @@ function Show-ConfiguratorWindow
     $txtOrg.Location = New-Object System.Drawing.Point(110, 11)
     $txtOrg.Width = 240
     $txtOrg.Text = if ($config -and $config.PSObject.Properties['Organization']) { [string]$config.Organization } else { 'Organization' }
-    $tip.SetToolTip($txtOrg, 'Registry namespace for the install version-stamp (HKLM\SOFTWARE\<name>\WindowsCustomizations), checked by the Intune detection rule. If you change it, rebuild the package and re-upload the detection script.')
+    $tip.SetToolTip($txtOrg, 'Registry namespace for the install version-stamp (HKLM\SOFTWARE\<name>\WindowsCustomizations), checked by the detection rule (Intune or ConfigMgr). If you change it, rebuild the package and re-upload the detection script.')
 
     # Visible hint (the same info as the tooltip, in case the user does not hover).
     $lblOrgHint = New-Object System.Windows.Forms.Label

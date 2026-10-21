@@ -69,6 +69,9 @@ are not interchangeable — pick based on how the device is managed:
 | **A. `start2.bin` seed** | Copied into the default user profile (this package) | Any device, no enrollment needed | ✅ yes (`StartLayout` catalog entry) |
 | **B. `ConfigureStartPins` JSON** | Intune **Settings Catalog** policy | **Intune/MDM-enrolled devices only** | ❌ no — assign separately in Intune |
 
+Devices deployed with Configuration Manager that are not co-managed with Intune can only use
+method A.
+
 > **Why not apply the JSON from the engine?** `ConfigureStartPins` is consumed **only through the
 > MDM/PolicyManager channel.** A SYSTEM/Win32 registry write to
 > `HKLM\SOFTWARE\Policies\Microsoft\Windows\Explorer` (`ConfigureStartPins` + `ConfigureStartPinsJSON`)

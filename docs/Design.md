@@ -14,33 +14,40 @@ A Win32 app (`.intunewin`) assigned to **devices** and run during Windows Autopi
 describes every customization; a per-deployment JSON config selects values; a small
 generic applier walks the catalog and dispatches to mechanism handlers.
 
+Intune/Autopilot is the default deployment channel. The same package is also supported as a
+**Configuration Manager task sequence step** in the full OS ([ConfigMgr.md](ConfigMgr.md)). The
+engine doesn't depend on the channel: only the packaging (§9) and the log folder (§7) differ.
+
 Design principles:
 
 - **Changeable-first.** Default to per-user defaults (Default User hive / seed files) that a
   non-admin can change. Only lock a setting (GP policy) when explicitly intended.
 - **Data over code.** Adding a customization is a catalog edit, not an engine edit.
-- **Idempotent.** Re-running produces the same end state; safe for ESP retries and version bumps.
-- **5.1-compatible.** Runs under the Intune Management Extension's Windows PowerShell 5.1.
+- **Idempotent.** Re-running produces the same end state; safe for ESP or task sequence retries
+  and version bumps.
+- **5.1-compatible.** Runs under Windows PowerShell 5.1, started by the Intune Management
+  Extension or a task sequence step.
 
 ---
 
 ## 2. Execution flow
 
 ```
-Intune Management Extension (32-bit, SYSTEM)
+Intune Management Extension (32-bit, SYSTEM)  — or a ConfigMgr task sequence step (SYSTEM)
   └─ powershell.exe -NoProfile -ExecutionPolicy Bypass -File Set-WindowsCustomizations.ps1
        1. Re-launch under SysNative (64-bit) if running 32-bit
-       2. Initialize logging (CMTrace, IntuneManagementExtension\Logs)
-       3. Confirm OS is Windows 11 (else log + exit)
-       4. Load + validate package\Config\Settings.json (against the catalog)
-       5. Import package\Engine\Catalog.psd1
-       6. Machine-level pass (⚙️, no Default User hive): app removal, DISM associations,
+       2. Initialize logging (CMTrace; the folder follows the channel, §7)
+       3. Refuse to run in WinPE (log + exit 1)
+       4. Confirm OS is Windows 11 (else log + exit)
+       5. Load + validate package\Config\Settings.json (against the catalog)
+       6. Import package\Engine\Catalog.psd1
+       7. Machine-level pass (⚙️, no Default User hive): app removal, DISM associations,
           HKLM/Policy keys, file seeds (taskbar LayoutModification.xml, Start start2.bin),
           branding file replacements, and other machine-context Custom handlers
-       7. Default User hive pass (✅): reg load NTUSER.DAT → apply the hive-backed items
+       8. Default User hive pass (✅): reg load NTUSER.DAT → apply the hive-backed items
           (DefaultHive + hive-writing Custom handlers) → unload (GC+retry)
-       8. Write version stamp on success (HKLM\SOFTWARE\<Org>\WindowsCustomizations)
-       9. Emit per-setting summary; choose exit code per FailureMode
+       9. Write version stamp on success (HKLM\SOFTWARE\<Org>\WindowsCustomizations)
+      10. Emit per-setting summary; choose exit code per FailureMode
 ```
 
 ---
@@ -198,9 +205,12 @@ Primary mechanism for ✅ settings. Procedure:
 | Start layout (`start2.bin`) | `…\Users\Default\AppData\Local\Packages\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\LocalState\` |
 
 In device-targeted Autopilot the app runs before any profile is created, so the enrolling
-user and all future users inherit these. Profiles that **already exist** when the app runs
-(re-deploy, retargeting to in-service devices, shared/multi-user machines) do not pick up the
-hive seeds — clean Autopilot device ESP is the intended scenario.
+user and all future users inherit these. A ConfigMgr task sequence that lays down a fresh OS
+(bare metal, wipe-and-load) is the same situation, because the step runs before anyone signs in.
+Profiles that **already exist** when the app runs (re-deploy, retargeting to in-service devices,
+shared/multi-user machines, profiles restored by USMT or kept by an in-place upgrade) do not pick
+up the hive seeds. Clean Autopilot device ESP, or a fresh-OS task sequence, is the intended
+scenario.
 
 > **Taskbar seed is only a changeable default if each pin carries `PinGeneration="N"`.** On
 > 24H2/25H2 the taskbar layout is reapplied from a per-user cache (`HKCU\…\CloudStore`) on every
@@ -213,19 +223,32 @@ hive seeds — clean Autopilot device ESP is the intended scenario.
 > (with `applyOnce`) is **MDM-only** — it's consumed solely through the PolicyManager channel, so a
 > SYSTEM/Win32 registry write is never honored on a non-enrolled device. It can't replace
 > `start2.bin` in this package; deliver it as a separate **Intune Settings Catalog** policy instead
-> (hybrid — see Asset-Preparation.md §2, Method B).
+> (hybrid — see Asset-Preparation.md §2, Method B). ConfigMgr-only devices (not co-managed) have no
+> MDM channel, so `start2.bin` is their only option.
 
 ---
 
 ## 7. Logging, detection, failure mode
 
-- **Logging.** CMTrace format in `%ProgramData%\Microsoft\IntuneManagementExtension\Logs\Set-WindowsCustomizations.log`
-  (collected by Intune diagnostics). Each setting logs an `Applied`/`Skipped`/`Failed` result;
-  an end-of-run summary tallies counts.
+- **Logging.** CMTrace format, `Set-WindowsCustomizations.log`. Each setting logs an
+  `Applied`/`Skipped`/`Failed` result; an end-of-run summary tallies counts.
+  `Get-DeploymentLogDirectory` picks the folder where the deploying channel's admins look:
+
+  | Context | Folder |
+  |---|---|
+  | Inside a running ConfigMgr task sequence | `_SMSTSLogPath` (next to `smsts.log`, travels with the TS logs) |
+  | ConfigMgr client present, Intune Management Extension absent | `%WINDIR%\CCM\Logs` |
+  | Anything else: Intune, the default | `%ProgramData%\Microsoft\IntuneManagementExtension\Logs` (collected by Intune diagnostics) |
+
+  Outside a task sequence, the IME check makes the Intune folder win on co-managed devices, so
+  the default channel's log location never moves.
 - **Detection.** On success the engine writes `HKLM\SOFTWARE\<Org>\WindowsCustomizations`
-  (`Version`, `InstalledOn`). The Win32 detection rule (`tools\Detect-WindowsCustomizations.ps1`)
+  (`Version`, `InstalledOn`). The detection script (`tools\Detect-WindowsCustomizations.ps1`)
   checks the stamped `Version` against the packaged version; a version bump re-triggers on
-  deployed devices.
+  deployed devices. It follows the contract Intune and ConfigMgr share: exit `0` with STDOUT
+  means detected, and exit `0` with no output means not detected. ConfigMgr reads a non-zero exit
+  as a script failure (Unknown), so one script serves an Intune Win32 app and a ConfigMgr
+  application.
 - **Failure mode.** `FailureMode` (config): **Lenient** (default) logs per-setting failures and
   continues, exiting `0` unless the engine itself can't run (bad config, hive won't load);
   **Strict** returns non-zero on any `Failed` result.
@@ -248,22 +271,26 @@ and are user-changeable by design. A full teardown is not implemented.
 Source layout:
 
 ```
-/package       Set-WindowsCustomizations.ps1, Remove-WindowsCustomizations.ps1  (the .intunewin payload)
+/package       Set-WindowsCustomizations.ps1, Remove-WindowsCustomizations.ps1  (the payload)
   /Engine      Functions.ps1, Catalog.psd1, version.txt
   /Config      Settings.json, Settings.schema.json
   /Assets      /Branding, /Layout, /AppAssociations
 /tools         Configure-Settings.ps1, New-Package.ps1, Update-SettingsSchema.ps1, Detect-WindowsCustomizations.ps1
 /Tests         Invoke-Tests.ps1, Pester suite, device-test procedure
-/docs          Customizations.md, Design.md, Asset-Preparation.md
-/out           build output (.intunewin + stamped detection script); gitignored
+/docs          Customizations.md, Design.md, Asset-Preparation.md, ConfigMgr.md
+/out           build output (.intunewin or ConfigMgr\<version>\ + stamped detection script); gitignored
 ```
 
 - **Install command:** `powershell.exe -NoProfile -ExecutionPolicy Bypass -File Set-WindowsCustomizations.ps1`
+  (the same command for an Intune Win32 app, a task sequence Run Command Line step, or a
+  ConfigMgr application)
 - **Uninstall command:** `powershell.exe -NoProfile -ExecutionPolicy Bypass -File Remove-WindowsCustomizations.ps1`
 - **Detection rule:** custom script `tools\Detect-WindowsCustomizations.ps1`.
 - **`tools\New-Package.ps1`** stamps one source-of-truth version into both the engine and the
-  detection script (detection runs standalone and can't read package files at runtime), then runs
-  `IntuneWinAppUtil` to emit the `.intunewin`. Prevents engine/detection version drift.
+  detection script (detection runs standalone and can't read package files at runtime). The default
+  `-Target Intune` then runs `IntuneWinAppUtil` to emit the `.intunewin`; `-Target ConfigMgr` copies
+  `package\` to `out\ConfigMgr\<version>\` as the content source instead. Prevents
+  engine/detection version drift.
 
 **Versioning.** Single source of truth (`package\Engine\version.txt`) consumed by the
 build script; it flows into the engine's stamp and the detection script's expected value.

@@ -1,12 +1,14 @@
 <#
     .SYNOPSIS
-        Applies Windows 11 customizations as user-changeable defaults during Autopilot.
+        Applies Windows 11 customizations as user-changeable defaults during device provisioning.
 
     .DESCRIPTION
         Data-driven engine: loads a catalog of customization definitions (Catalog.psd1) and
         a per-deployment selection file (Config\Settings.json), then applies each selected
-        customization through its mechanism handler. Designed to run as SYSTEM in the Intune
-        Management Extension (Windows PowerShell 5.1) during the Autopilot device ESP phase.
+        customization through its mechanism handler. Designed to run as SYSTEM (Windows
+        PowerShell 5.1) before any user signs in: by default in the Intune Management Extension
+        during the Autopilot device ESP phase, or as a Configuration Manager task sequence step
+        in the full OS (see docs\ConfigMgr.md).
 
     .NOTES
         Created by: Jon Anderson (@ConfigJon)
@@ -16,9 +18,11 @@
 [CmdletBinding()]
 param()
 
-# Re-launch under 64-bit PowerShell when started from the 32-bit IME host -------------------
-# PROCESSOR_ARCHITEW6432 is only set in a 32-bit process on 64-bit Windows; it reports the
-# native architecture (AMD64 or ARM64). SysNative redirects to the native PowerShell.
+# Re-launch under 64-bit PowerShell when started from a 32-bit host -------------------------
+# The IME is 32-bit, and so is a task sequence Run Command Line step unless 64-bit file system
+# redirection is disabled on it. PROCESSOR_ARCHITEW6432 is only set in a 32-bit process on
+# 64-bit Windows; it reports the native architecture (AMD64 or ARM64). SysNative redirects to
+# the native PowerShell.
 if ($env:PROCESSOR_ARCHITEW6432 -in 'AMD64', 'ARM64')
 {
     try
@@ -53,6 +57,20 @@ else
     Write-LogEntry -Message "version.txt not found; using $ScriptVersion" -Level Warning
 }
 Write-LogEntry -Message "Engine version $ScriptVersion"
+
+# Refuse to run in WinPE -------------------------------------------------------------------
+# Every handler targets the running OS (-Online DISM/Appx, C:\Users\Default), so in WinPE it
+# would change WinPE itself. In a task sequence the step belongs after Setup Windows and ConfigMgr.
+if (Test-IsWinPE)
+{
+    Write-LogEntry -Message 'Running in WinPE. Run this step in the full OS, after Setup Windows and ConfigMgr.' -Level Error
+    Write-LogEntry -Message 'END - Windows Customization Script'
+    exit 1
+}
+if (Get-TaskSequenceStatus)
+{
+    Write-LogEntry -Message 'Running in a Configuration Manager task sequence'
+}
 
 # Confirm the target OS --------------------------------------------------------------------
 if (-not (Test-IsWindows11))

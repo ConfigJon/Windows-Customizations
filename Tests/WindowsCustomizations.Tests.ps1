@@ -176,9 +176,12 @@ Describe 'Function library (Functions.ps1)' {
     }
 
     It 'defines <FunctionName>' -ForEach @(
+        @{ FunctionName = 'Get-DeploymentLogDirectory' }
         @{ FunctionName = 'Initialize-Logging' }
         @{ FunctionName = 'Write-LogEntry' }
         @{ FunctionName = 'Test-IsWindows11' }
+        @{ FunctionName = 'Test-IsWinPE' }
+        @{ FunctionName = 'Get-TaskSequenceStatus' }
         @{ FunctionName = 'Set-RegistryValue' }
         @{ FunctionName = 'Import-RegistryHive' }
         @{ FunctionName = 'Remove-RegistryHive' }
@@ -205,6 +208,71 @@ Describe 'Function library (Functions.ps1)' {
         $Result = New-CustomizationResult -Name 'X' -Status 'Applied'
         $Result.Name | Should -Be 'X'
         $Result.Status | Should -Be 'Applied'
+    }
+
+    It 'Test-IsWinPE keys off the MiniNT control key' {
+        Test-IsWinPE | Should -BeFalse -Because 'the suite runs in a full OS'
+        Mock Test-Path { $true } -ParameterFilter { $Path -like '*\Control\MiniNT' }
+        Test-IsWinPE | Should -BeTrue
+    }
+
+    It 'Get-TaskSequenceStatus is false outside a running task sequence' {
+        Get-TaskSequenceStatus | Should -BeFalse
+    }
+
+    Context 'Get-DeploymentLogDirectory follows the deployment channel' {
+        BeforeAll {
+            $ImeLogs = Join-Path -Path $env:ALLUSERSPROFILE -ChildPath 'Microsoft\IntuneManagementExtension\Logs'
+            $CcmLogs = Join-Path -Path $env:WINDIR -ChildPath 'CCM\Logs'
+        }
+
+        It 'uses _SMSTSLogPath inside a running task sequence' {
+            Mock Get-TaskSequenceStatus { $true }
+            Mock New-Object {
+                [pscustomobject]@{} | Add-Member -MemberType ScriptMethod -Name 'Value' -Value { param($Name) 'C:\Windows\CCM\Logs\SMSTSLog' } -PassThru
+            } -ParameterFilter { $ComObject -eq 'Microsoft.SMS.TSEnvironment' }
+            Get-DeploymentLogDirectory | Should -Be 'C:\Windows\CCM\Logs\SMSTSLog'
+        }
+
+        It 'uses CCM\Logs on a ConfigMgr client without the IME' {
+            Mock Get-TaskSequenceStatus { $false }
+            Mock Get-Service { $null }
+            Mock Test-Path { $true } -ParameterFilter { $LiteralPath -eq $CcmLogs }
+            Get-DeploymentLogDirectory | Should -Be $CcmLogs
+        }
+
+        It 'keeps the IME Logs folder when the IME is installed, even beside a ConfigMgr client' {
+            Mock Get-TaskSequenceStatus { $false }
+            Mock Get-Service { [pscustomobject]@{ Name = 'IntuneManagementExtension' } }
+            Mock Test-Path { $true } -ParameterFilter { $LiteralPath -eq $CcmLogs }
+            Get-DeploymentLogDirectory | Should -Be $ImeLogs
+        }
+
+        It 'defaults to the IME Logs folder with neither agent present' {
+            Mock Get-TaskSequenceStatus { $false }
+            Mock Get-Service { $null }
+            Mock Test-Path { $false } -ParameterFilter { $LiteralPath -eq $CcmLogs }
+            Get-DeploymentLogDirectory | Should -Be $ImeLogs
+        }
+    }
+}
+
+Describe 'Detection script' {
+    BeforeAll {
+        # Stamp an Organization no machine has (as New-Package.ps1 stamps the real one), so the
+        # version stamp is guaranteed absent.
+        $DetectionSource = Get-Content -Path (Join-Path -Path $RepoRoot -ChildPath 'tools\Detect-WindowsCustomizations.ps1') -Raw
+        $TestOrganization = 'WCTest' + [guid]::NewGuid().ToString('N')
+        $DetectionSource = $DetectionSource -replace "(\`$Organization\s*=\s*)'[^']*'", "`$1'$TestOrganization'"
+        $DetectionCopy = Join-Path -Path $TestDrive -ChildPath 'Detect-WindowsCustomizations.ps1'
+        Set-Content -Path $DetectionCopy -Value $DetectionSource
+    }
+
+    It 'reports not-detected as exit 0 with no output (the contract Intune and ConfigMgr share)' {
+        $PowerShell = Join-Path -Path $env:WINDIR -ChildPath 'System32\WindowsPowerShell\v1.0\powershell.exe'
+        $Output = & $PowerShell -NoProfile -ExecutionPolicy Bypass -File $DetectionCopy
+        $LASTEXITCODE | Should -Be 0 -Because 'ConfigMgr reads a non-zero exit as a script failure, not "not installed"'
+        $Output | Should -BeNullOrEmpty
     }
 }
 

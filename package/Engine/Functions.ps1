@@ -20,6 +20,41 @@ $WindowsCustomizationsEngineRoot = $PSScriptRoot
 
 $script:LogFilePath = $null
 
+# From Script Reference Functions\ConfigMgr.ps1 (harvested 2026-10-20)
+function Get-DeploymentLogDirectory
+{
+    # The log goes where the deploying channel's admins look for it:
+    #   ConfigMgr task sequence step -> _SMSTSLogPath, next to smsts.log (it moves with the TS logs)
+    #   ConfigMgr client, no IME     -> %WINDIR%\CCM\Logs (e.g. an application install where the
+    #                                   TS environment isn't readable)
+    #   anything else                -> the IME Logs folder (Intune, the default; collected by Intune
+    #                                   diagnostics)
+    # The IME check keeps co-managed devices on the Intune folder outside a task sequence.
+    if (Get-TaskSequenceStatus)
+    {
+        $TsLogPath = $null
+        try
+        {
+            $TsLogPath = (New-Object -ComObject 'Microsoft.SMS.TSEnvironment').Value('_SMSTSLogPath')
+        }
+        catch
+        {
+            $TsLogPath = $null
+        }
+        if ($TsLogPath)
+        {
+            return $TsLogPath
+        }
+    }
+    $CcmLogsDirectory = Join-Path -Path $env:WINDIR -ChildPath 'CCM\Logs'
+    $HasIme = $null -ne (Get-Service -Name 'IntuneManagementExtension' -ErrorAction SilentlyContinue)
+    if ((Test-Path -LiteralPath $CcmLogsDirectory) -and (-not $HasIme))
+    {
+        return $CcmLogsDirectory
+    }
+    return (Join-Path -Path $env:ALLUSERSPROFILE -ChildPath 'Microsoft\IntuneManagementExtension\Logs')
+}
+
 function Initialize-Logging
 {
     [CmdletBinding()]
@@ -27,7 +62,7 @@ function Initialize-Logging
     (
         [Parameter(Mandatory = $false)][ValidateNotNullOrEmpty()][string]$FileName = 'Set-WindowsCustomizations.log'
     )
-    $LogsDirectory = Join-Path -Path $env:ALLUSERSPROFILE -ChildPath 'Microsoft\IntuneManagementExtension\Logs'
+    $LogsDirectory = Get-DeploymentLogDirectory
     if (-not (Test-Path -Path $LogsDirectory))
     {
         New-Item -Path $LogsDirectory -ItemType Directory -Force | Out-Null
@@ -93,6 +128,43 @@ function Test-IsWindows11
     return ($Caption -match 'Windows 11')
 }
 
+function Test-IsWinPE
+{
+    # WinPE marks itself with the MiniNT control key; a full OS never has it.
+    return (Test-Path -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\MiniNT')
+}
+
+# From Script Reference Functions\ConfigMgr.ps1 (2026-10-20)
+function Get-TaskSequenceStatus
+{
+    # Is a task sequence ACTUALLY running right now? Two-stage on purpose: creating
+    # Microsoft.SMS.TSEnvironment succeeds on any box with a CM client installed, so that alone
+    # is a false positive - _SMSTSType is only readable while a task sequence is executing.
+    $TsEnv = $null
+    try
+    {
+        $TsEnv = New-Object -ComObject 'Microsoft.SMS.TSEnvironment'
+    }
+    catch
+    {
+        return $false
+    }
+    if ($null -eq $TsEnv)
+    {
+        return $false
+    }
+    $TsType = $null
+    try
+    {
+        $TsType = $TsEnv.Value('_SMSTSType')
+    }
+    catch
+    {
+        return $false
+    }
+    return -not [string]::IsNullOrEmpty($TsType)
+}
+
 function Set-RegistryValue
 {
     [CmdletBinding()]
@@ -129,8 +201,8 @@ function Import-RegistryHive
     {
         throw "A PSDrive named '$Name' already exists."
     }
-    # A previous interrupted run (e.g. an ESP retry after a forced kill) can leave this hive
-    # loaded, which makes 'reg load' fail. Best-effort unload of our own key first.
+    # A previous interrupted run (e.g. an ESP or task sequence retry after a forced kill) can leave
+    # this hive loaded, which makes 'reg load' fail. Best-effort unload of our own key first.
     $Query = Start-Process -FilePath "$env:WINDIR\system32\reg.exe" -ArgumentList "query $Key" -WindowStyle Hidden -PassThru -Wait
     if ($Query.ExitCode -eq 0)
     {
@@ -362,7 +434,8 @@ function Set-ProtectedFile
     if (Test-Path -Path $Destination)
     {
         & "$env:WINDIR\System32\takeown.exe" /f $Destination | Out-Null
-        # Grant full control to SYSTEM (the runtime context during ESP) and Administrators.
+        # Grant full control to SYSTEM (the runtime context in the ESP or a task sequence) and
+        # Administrators.
         # SIDs are locale-independent: S-1-5-18 = NT AUTHORITY\SYSTEM, S-1-5-32-544 = Administrators.
         & "$env:WINDIR\System32\icacls.exe" $Destination /grant '*S-1-5-18:(F)' '*S-1-5-32-544:(F)' | Out-Null
     }

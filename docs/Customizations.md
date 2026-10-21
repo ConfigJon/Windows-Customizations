@@ -7,7 +7,8 @@ packaging, Default User hive seeding) is covered in the design phase.
 ## Goals & scope
 
 - **Deliverable:** a Win32 app (`.intunewin`) assigned to **devices**, run during Windows
-  Autopilot deployment (as SYSTEM, during the ESP device phase).
+  Autopilot deployment (as SYSTEM, during the ESP device phase). The same package also runs as
+  a Configuration Manager task sequence step ([ConfigMgr.md](ConfigMgr.md)).
 - **Core constraint:** every setting is applied as a **default that a non-admin user can
   still change**. Intune Settings-Catalog/CSP policies and most `HKLM\...\Policies\...`
   keys are avoided because they grey out / lock the control. The primary mechanism is
