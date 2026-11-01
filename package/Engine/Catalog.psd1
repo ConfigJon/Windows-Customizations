@@ -36,6 +36,24 @@
             AllowedValues = @(0, 1)
         },
         @{
+            Name          = 'TaskbarPosition'
+            Category      = 'Taskbar'
+            Description   = 'Taskbar position on screen (26H2 26300.9711+): 0 = left, 1 = top, 2 = right, 3 = bottom'
+            Mechanism     = 'Custom'
+            NeedsHive     = $true
+            AllowedValues = @(0, 1, 2, 3)
+        },
+        @{
+            Name          = 'TaskbarSize'
+            Category      = 'Taskbar'
+            Description   = 'Taskbar size (26H2 26300.9711+): 0 = default, 1 = small'
+            Mechanism     = 'DefaultHive'
+            Path          = 'SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced'
+            ValueName     = 'TaskbarSize'
+            Type          = 'DWord'
+            AllowedValues = @(0, 1)
+        },
+        @{
             Name          = 'TaskViewButton'
             Category      = 'Taskbar'
             Description   = 'Task View button: 0 = hidden, 1 = shown'

@@ -585,6 +585,35 @@ function Invoke-CustomHandler
                 Remove-ItemProperty -Path $RunOnceKey -Name 'WC_ResetOutlookPin' -Force -ErrorAction SilentlyContinue
             }
         }
+        'TaskbarPosition'
+        {
+            # Explorer watches Explorer\Advanced\TaskbarLocation and moves the taskbar the moment the value
+            # changes, and a later explorer start reads it - but on a user's FIRST logon the shell comes
+            # up at the bottom whatever the seeded value says (26H2 26300.9711: value 1 live, Settings
+            # shows Top, taskbar at the bottom; the same user's next logon honors it). So, like
+            # OutlookTaskbarPin, a first-logon RunOnce writes the value after the shell is up. Explorer
+            # only reacts to a value DIFFERENT from the one it cached at startup (re-writing the seeded
+            # value, even 15 s later, does nothing), so the RunOnce first writes 3 - the bottom, where the
+            # taskbar already is, so no visible move - waits 2 s so the two writes can't collapse into one
+            # notification, then writes the chosen position. The value is seeded too so Settings shows the
+            # chosen position from the start. 3 (bottom) is the stock position: seed it, no RunOnce.
+            $Advanced = "$($HiveDrive):\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
+            Set-RegistryValue -RegKey $Advanced -Name 'TaskbarLocation' -PropertyType 'DWord' -Value $Value
+            $RunOnceKey = "$($HiveDrive):\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce"
+            if ($Value -eq 3)
+            {
+                if (Test-Path -Path $RunOnceKey)
+                {
+                    Remove-ItemProperty -Path $RunOnceKey -Name 'WC_TaskbarLocation' -Force -ErrorAction SilentlyContinue
+                }
+            }
+            else
+            {
+                $LiveKey = 'HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'
+                $Command = "cmd.exe /c reg add ""$LiveKey"" /v TaskbarLocation /t REG_DWORD /d 3 /f & ping -n 3 127.0.0.1 >nul & reg add ""$LiveKey"" /v TaskbarLocation /t REG_DWORD /d $Value /f"
+                Set-RegistryValue -RegKey $RunOnceKey -Name 'WC_TaskbarLocation' -PropertyType 'String' -Value $Command
+            }
+        }
         'EdgeDesktopShortcut'
         {
             $Shortcut = Join-Path -Path $env:PUBLIC -ChildPath 'Desktop\Microsoft Edge.lnk'

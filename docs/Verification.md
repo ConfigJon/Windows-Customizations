@@ -46,6 +46,8 @@ are `Custom` handlers that write into the same hive. `0`/`1` meanings are in the
 | SearchBoxMode | `...\CurrentVersion\Search` \ `SearchboxTaskbarMode` (+ `SearchboxTaskbarModeCache` = 1). For **2 (search box) the hive holds neither value** by design: Windows writes 2 + cache 1 itself at first logon, so check a new user's HKCU instead | Taskbar search (Settings > Personalization > Taskbar > Search): 0 hide, 1 icon only, 2 search box, 3 icon and label |
 | SmallerTaskbarButtons | `...\Explorer\Advanced` \ `IconSizePreference` | Taskbar > Taskbar behaviors > Show smaller taskbar buttons (0 always, 1 never, 2 when full) |
 | TaskbarAlignment | `...\Explorer\Advanced` \ `TaskbarAl` | Taskbar left/center |
+| TaskbarPosition | `...\Explorer\Advanced` \ `TaskbarLocation` (+ `...\CurrentVersion\RunOnce` \ `WC_TaskbarLocation` for 0/1/2: a `cmd /c reg add … /d 3 & ping … & reg add … /d <value>` line, consumed at the user's first logon - absent afterwards) | Taskbar > Taskbar behaviors > Taskbar position (0 left, 1 top, 2 right, 3 bottom); 26H2 26300.9711+. The taskbar itself moves a few seconds into the first logon, when the RunOnce fires; explorer ignores a write of the value it already holds, hence the bottom-first double write |
+| TaskbarSize | `...\Explorer\Advanced` \ `TaskbarSize` | Taskbar > Taskbar behaviors > Taskbar size (0 default, 1 small); 26H2 26300.9711+ |
 | WidgetsButton | `HKLM\...\Policies\Microsoft\Dsh` \ `AllowNewsAndInterests` (machine policy; locks) | Widgets button on the taskbar |
 | TaskViewButton | `...\Explorer\Advanced` \ `ShowTaskViewButton` | Task View button |
 | TaskbarEndTask | `...\Explorer\Advanced\TaskbarDeveloperSettings` \ `TaskbarEndTask` | "End Task" in taskbar right-click |

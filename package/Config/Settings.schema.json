@@ -38,6 +38,22 @@
             1
           ]
         },
+        "TaskbarPosition": {
+          "description": "Taskbar position on screen (26H2 26300.9711+): 0 = left, 1 = top, 2 = right, 3 = bottom",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "TaskbarSize": {
+          "description": "Taskbar size (26H2 26300.9711+): 0 = default, 1 = small",
+          "enum": [
+            0,
+            1
+          ]
+        },
         "TaskViewButton": {
           "description": "Task View button: 0 = hidden, 1 = shown",
           "enum": [

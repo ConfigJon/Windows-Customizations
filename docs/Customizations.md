@@ -52,6 +52,8 @@ user-changeable.
 | Setting | What it does | Mech | Default |
 |---|---|---|---|
 | Taskbar alignment | Left vs Center | ✅ | configurable |
+| Taskbar position | Bottom / Top / Left / Right (`TaskbarLocation`: 0 left, 1 top, 2 right, 3 bottom). The picker arrived with 26H2 26300.9711; earlier builds ignore the value. Explorer moves the taskbar the moment the value changes and honors it on every later start, but on a user's **first** logon it comes up at the bottom whatever was seeded, so the engine seeds the value **and** a first-logon RunOnce (same pattern as the Outlook pin) that writes bottom and then the chosen position once the shell is up - explorer ignores a write of the value it already cached, so a plain re-write would do nothing | ✅ | configurable |
+| Taskbar size | Default / Small (`TaskbarSize`). Also 26300.9711+; Small greys out "Show smaller taskbar buttons" | ✅ | configurable |
 | Search box mode | Hidden / icon only / search box / icon and label. The search box (2) is Windows' own first-logon default and a pre-seeded 2 is downgraded to icon at first logon, so for 2 the engine seeds nothing and lets Windows apply it | ✅ | Icon |
 | Smaller taskbar buttons | "Show smaller taskbar buttons": always / never / when taskbar is full (`IconSizePreference`) | ✅ | configurable |
 | Task View button | Show / hide | ✅ | configurable |
