@@ -82,6 +82,7 @@ are `Custom` handlers that write into the same hive. `0`/`1` meanings are in the
 | FeedbackFrequency | `Software\Microsoft\Siuf\Rules` \ `NumberOfSIUFInPeriod` | Privacy & security > Diagnostics & feedback > Feedback frequency = Never |
 | GameBarControllerButton | `Software\Microsoft\GameBar` \ `UseNexusForGameBarEnabled` | Gaming > Game Bar > Allow your controller to open Game Bar |
 | StickyKeysShortcut | `Control Panel\Accessibility\StickyKeys` \ `Flags` (REG_SZ; `506` = off, `510` = on) | Accessibility > Keyboard > Sticky keys shortcut |
+| NumLock | `Control Panel\Keyboard` \ `InitialKeyboardIndicators` (REG_SZ; `2` = on, `0` = off; stock is `2147483648`) — plus the same value under `HKU\.DEFAULT` for the sign-in screen (machine-level, below) | No Settings control: the Num Lock key state in a new user's first session; at the sign-in screen, type on the numeric keypad into the password box (digits appear only with Num Lock on) |
 
 The privacy/debloat values (`ContentDeliveryManager`, `BingSearchEnabled`, `DefenderPrompt`)
 rarely have a *visible* effect — confirm them by reading the value, not by looking at the UI.
@@ -95,6 +96,8 @@ Read these from the live machine (no hive load needed):
 ```powershell
 # FastStartup
 reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Power" /v HiberbootEnabled
+# NumLock - the sign-in screen's copy (the SYSTEM profile); 2 = on, 0 = off
+reg query "HKU\.DEFAULT\Control Panel\Keyboard" /v InitialKeyboardIndicators
 # EdgeFirstRun (Policy)
 reg query "HKLM\SOFTWARE\Policies\Microsoft\Edge" /v HideFirstRunExperience
 # OOBEPrivacyExperience (Policy) — only takes effect during OOBE of a fresh setup

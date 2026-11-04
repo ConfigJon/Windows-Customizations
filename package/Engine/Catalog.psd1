@@ -583,6 +583,14 @@
             AllowedValues = @(0, 1)
         },
         @{
+            Name          = 'NumLock'
+            Category      = 'System'
+            Description   = 'Num Lock at the sign-in screen and at a new user''s first sign-in: 0 = off, 1 = on'
+            Mechanism     = 'Custom'
+            NeedsHive     = $true
+            AllowedValues = @(0, 1)
+        },
+        @{
             Name          = 'ClipboardHistory'
             Category      = 'System'
             Description   = 'Clipboard history (Win+V): 0 = off, 1 = on'

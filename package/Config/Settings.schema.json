@@ -414,6 +414,13 @@
             1
           ]
         },
+        "NumLock": {
+          "description": "Num Lock at the sign-in screen and at a new user's first sign-in: 0 = off, 1 = on",
+          "enum": [
+            0,
+            1
+          ]
+        },
         "ClipboardHistory": {
           "description": "Clipboard history (Win+V): 0 = off, 1 = on",
           "enum": [

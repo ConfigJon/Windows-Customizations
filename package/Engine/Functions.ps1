@@ -559,6 +559,19 @@ function Invoke-CustomHandler
             $Flags = if ($Value -eq 1) { '510' } else { '506' }
             Set-RegistryValue -RegKey "$($HiveDrive):\Control Panel\Accessibility\StickyKeys" -Name 'Flags' -PropertyType 'String' -Value $Flags
         }
+        'NumLock'
+        {
+            # Two readers, two hives. The sign-in screen takes its Num Lock state from the SYSTEM profile
+            # (HKU\.DEFAULT), not from the last user's setting (26H2 26300.9711: last user on, screen off
+            # until .DEFAULT was set). A new user's first session takes it from the user's own
+            # InitialKeyboardIndicators, which the Default hive's stock 2147483648 ("don't set") leaves
+            # to chance; from then on Windows persists each user's own choice at sign-out, so the seed is
+            # a true default. REG_SZ: "2" = Num Lock on, "0" = off. Fast Startup can restore the keyboard
+            # state from the hibernated kernel session instead (see the FastStartup entry).
+            $Indicators = if ($Value -eq 1) { '2' } else { '0' }
+            Set-RegistryValue -RegKey "$($HiveDrive):\Control Panel\Keyboard" -Name 'InitialKeyboardIndicators' -PropertyType 'String' -Value $Indicators
+            Set-RegistryValue -RegKey 'Registry::HKEY_USERS\.DEFAULT\Control Panel\Keyboard' -Name 'InitialKeyboardIndicators' -PropertyType 'String' -Value $Indicators
+        }
         'DesktopBackground'
         {
             # Non-locking preference equivalent of the CloudContent Spotlight policy. BackgroundType

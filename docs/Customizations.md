@@ -105,6 +105,7 @@ user-changeable.
 | New network-location notification | Suppress | ⚙️ | Suppressed |
 | Dynamic time zone | Location consent + `tzautoupdate` service | ⚙️ | On |
 | Fast Startup | Enable / disable | ⚙️ | configurable |
+| Num Lock | On / off at the **sign-in screen** and at a new user's **first** sign-in. Two readers, two hives: the sign-in screen reads the SYSTEM profile (`HKU\.DEFAULT\Control Panel\Keyboard\InitialKeyboardIndicators`), not the last user's setting; a new session reads the user's own value, which the Default hive's stock `2147483648` ("don't set") leaves to chance. The engine writes `2` (on) / `0` (off) to both. After that Windows saves each user's own choice at sign-out, so it stays a changeable default. With Fast Startup on, a hybrid shutdown can carry the previous keyboard state into the next boot instead | ✅ + ⚙️ | configurable |
 | Clipboard history | `Software\Microsoft\Clipboard\EnableClipboardHistory` (non-policy; note the non-standard root) | ✅ | configurable |
 | Game Bar controller button | "Allow your controller to open Game Bar" (`GameBar\UseNexusForGameBarEnabled`) | ✅ | configurable |
 | First logon animation | Policy (machine-wide) | 🔒 | Optional, off |
